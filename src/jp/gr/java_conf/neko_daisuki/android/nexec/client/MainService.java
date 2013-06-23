@@ -162,7 +162,7 @@ public class MainService extends Service {
             }
             catch (RemoteException e) {
                 e.printStackTrace();
-                showToast(String.format("failed to reply: %s", e.getMessage()));
+                // TODO: Show error.
             }
         }
     }
