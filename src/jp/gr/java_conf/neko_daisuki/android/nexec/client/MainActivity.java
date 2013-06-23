@@ -1,22 +1,105 @@
 package jp.gr.java_conf.neko_daisuki.android.nexec.client;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Random;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.JsonWriter;
 import android.view.Menu;
 import android.view.View.OnClickListener;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
     private class OkButtonOnClickListener implements OnClickListener {
 
+        private String mHost;
+        private int mPort;
+        private String[] mArgs;
+
+        public OkButtonOnClickListener(String host, int port, String[] args) {
+            mHost = host;
+            mPort = port;
+            mArgs = args;
+        }
+
         public void onClick(View view) {
+            String sessionId;
+            try {
+                sessionId = createSessionId();
+            }
+            catch (NoSuchAlgorithmException e) {
+                showException("algorithm not found", e);
+                return;
+            }
+            try {
+                saveSession(sessionId);
+            }
+            catch (IOException e) {
+                showException("failed to save session", e);
+                return;
+            }
+
             Intent intent = getIntent();
+            intent.putExtra("SESSION_ID", sessionId);
             setResult(RESULT_OK, intent);
             finish();
+        }
+
+        private void showException(String message, Throwable e) {
+            showToast(String.format("%s: %s", message, e.getMessage()));
+            e.printStackTrace();
+        }
+
+        private String createSessionId() throws NoSuchAlgorithmException {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(mHost.getBytes());
+            for (int width: new int[] { 0, 8, 16, 24 }) {
+                md.update((byte)((mPort >>> width) & 0xff));
+            }
+            for (String a: mArgs) {
+                md.update(a.getBytes());
+            }
+            long now = System.currentTimeMillis();
+            for (int width: new int[] { 0, 8, 16, 24, 32, 40, 48, 56 }) {
+                md.update((byte)((now >>> width) & 0xff));
+            }
+            byte[] bytes = new byte[32];
+            mRandom.nextBytes(bytes);
+            md.update(bytes);
+            return md.toString();
+        }
+
+        private void saveSession(String sessionId) throws IOException {
+            OutputStream out = openFileOutput(sessionId, 0);
+            JsonWriter writer = new JsonWriter(
+                    new BufferedWriter(new OutputStreamWriter(out, "UTF-8")));
+            try {
+                writer.beginObject();
+                writer.name("host").value(mHost);
+                writer.name("port").value(mPort);
+                writer.name("args");
+                writer.beginArray();
+                for (String a: mArgs) {
+                    writer.value(a);
+                }
+                writer.endArray();
+                writer.endObject();
+            }
+            finally {
+                writer.close();
+            }
         }
     }
 
@@ -27,6 +110,8 @@ public class MainActivity extends Activity {
             finish();
         }
     }
+
+    private Random mRandom = new Random();
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -41,34 +126,42 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         Intent intent = getIntent();
-        setStringExtraText(R.id.host, intent, "HOST");
-        setIntExtraText(R.id.port, intent, "PORT");
-        setStringArrayExtraText(R.id.args, intent, "ARGS");
+        String host = intent.getStringExtra("HOST");
+        int port = intent.getIntExtra("PORT", 57005);
+        String[] args = intent.getStringArrayExtra("ARGS");
+        setStringText(R.id.host, host);
+        setIntText(R.id.port, port);
+        setStringArrayText(R.id.args, args);
 
         Button okButton = (Button)findViewById(R.id.ok_button);
-        okButton.setOnClickListener(new OkButtonOnClickListener());
+        okButton.setOnClickListener(
+                new OkButtonOnClickListener(host, port, args));
         Button cancelButton = (Button)findViewById(R.id.cancel_button);
         cancelButton.setOnClickListener(new CancelButtonOnClickListener());
     }
 
-    private void setIntExtraText(int id, Intent intent, String key) {
-        TextView view = (TextView)findViewById(id);
-        view.setText(Integer.toString(intent.getIntExtra(key, 57005)));
+    private TextView getTextView(int id) {
+        return (TextView)findViewById(id);
     }
 
-    private void setStringArrayExtraText(int id, Intent intent, String key) {
-        TextView view = (TextView)findViewById(id);
-        String[] args = intent.getStringArrayExtra(key);
-        StringBuffer buffer = new StringBuffer(args[0]);
-        for (int i = 1; i < args.length; i++) {
-            buffer.append(String.format(" %s", args[i]));
+    private void setIntText(int id, int n) {
+        getTextView(id).setText(Integer.toString(n));
+    }
+
+    private void setStringArrayText(int id, String[] sa) {
+        StringBuffer buffer = new StringBuffer(sa[0]);
+        for (int i = 1; i < sa.length; i++) {
+            buffer.append(String.format(" %s", sa[i]));
         }
-        view.setText(buffer.toString());
+        getTextView(id).setText(buffer.toString());
     }
 
-    private void setStringExtraText(int id, Intent intent, String key) {
-        TextView view = (TextView)findViewById(id);
-        view.setText(intent.getStringExtra(key));
+    private void setStringText(int id, String s) {
+        getTextView(id).setText(s);
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 }
 
