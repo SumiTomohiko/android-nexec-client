@@ -129,7 +129,7 @@ public class MainService extends Service {
         }
     }
 
-    private class IncomingHandler extends Handler {
+    private static class IncomingHandler extends Handler {
 
         private Task mTask;
 
