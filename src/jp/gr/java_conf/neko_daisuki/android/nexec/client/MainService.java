@@ -19,12 +19,37 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.JsonReader;
+import android.util.Log;
 import android.widget.Toast;
 
+import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
 
 public class MainService extends Service {
+
+    private static class Destination implements Logging.Destination {
+
+        public void verbose(String message) {
+            Log.v(TAG, message);
+        }
+
+        public void debug(String message) {
+            Log.d(TAG, message);
+        }
+
+        public void info(String message) {
+            Log.i(TAG, message);
+        }
+
+        public void warn(String message) {
+            Log.w(TAG, message);
+        }
+
+        public void err(String message) {
+            Log.e(TAG, message);
+        }
+    }
 
     private static class Input extends InputStream {
 
@@ -174,7 +199,15 @@ public class MainService extends Service {
         public String[] args = new String[0];
     }
 
+    private static final String TAG = "nexec client";
+
     private Handler mHandler = new Handler();
+
+    public void onCreate() {
+        super.onCreate();
+        Logging.setDestination(new Destination());
+        Log.i(TAG, "MainService was created.");
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
