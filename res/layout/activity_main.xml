@@ -11,18 +11,28 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:stretchColumns="1">
+        android:stretchColumns="1"
+        android:shrinkColumns="1">
         <TableRow>
             <TextView android:text="@string/host_label"/>
-            <TextView android:id="@+id/host" android:typeface="monospace"/>
+            <EditText
+                android:id="@+id/host"
+                android:editable="false"
+                android:typeface="monospace"/>
         </TableRow>
         <TableRow>
             <TextView android:text="@string/port_label"/>
-            <TextView android:id="@+id/port" android:typeface="monospace"/>
+            <EditText
+                android:id="@+id/port"
+                android:editable="false"
+                android:typeface="monospace"/>
         </TableRow>
         <TableRow>
             <TextView android:text="@string/args_label"/>
-            <TextView android:id="@+id/args" android:typeface="monospace"/>
+            <EditText
+                android:id="@+id/args"
+                android:editable="false"
+                android:typeface="monospace"/>
         </TableRow>
     </TableLayout>
     <LinearLayout
