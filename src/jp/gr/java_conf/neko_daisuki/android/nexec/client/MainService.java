@@ -23,6 +23,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
+import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
 
@@ -129,11 +130,17 @@ public class MainService extends Service {
         }
 
         private void run() {
+            Permissions perm = new Permissions();
+            for (String path: mSession.files) {
+                perm.allowPath(path);
+            }
+
             NexecClient nexec = new NexecClient();
             try {
                 nexec.run(
                         mSession.host, mSession.port, mSession.args,
-                        mStdin, mStdout, mStderr);
+                        mStdin, mStdout, mStderr,
+                        perm);
             }
             catch (ProtocolException e) {
                 showException("protocol error", e);
@@ -197,6 +204,7 @@ public class MainService extends Service {
         public String host = "";
         public int port;
         public String[] args = new String[0];
+        public String[] files = new String[0];
     }
 
     private static final String TAG = "nexec client";
@@ -249,6 +257,18 @@ public class MainService extends Service {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
+    private String[] readArray(JsonReader reader) throws IOException {
+        List<String> list = new LinkedList<String>();
+
+        reader.beginArray();
+        while (reader.hasNext()) {
+            list.add(reader.nextString());
+        }
+        reader.endArray();
+
+        return list.toArray(new String[0]);
+    }
+
     private Session readSessionFile(String sessionId) throws IOException {
         Session session = new Session();
 
@@ -265,15 +285,10 @@ public class MainService extends Service {
                     session.port = reader.nextInt();
                 }
                 else if (name.equals("args")) {
-                    List<String> args = new LinkedList<String>();
-
-                    reader.beginArray();
-                    while (reader.hasNext()) {
-                        args.add(reader.nextString());
-                    }
-                    reader.endArray();
-
-                    session.args = args.toArray(new String[0]);
+                    session.args = readArray(reader);
+                }
+                else if (name.equals("files")) {
+                    session.files = readArray(reader);
                 }
             }
             reader.endObject();

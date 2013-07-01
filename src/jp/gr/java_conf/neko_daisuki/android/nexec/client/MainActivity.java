@@ -6,6 +6,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import android.app.Activity;
@@ -15,6 +17,8 @@ import android.util.JsonWriter;
 import android.view.Menu;
 import android.view.View.OnClickListener;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,11 +30,13 @@ public class MainActivity extends Activity {
         private String mHost;
         private int mPort;
         private String[] mArgs;
+        private String[] mFiles;
 
-        public OkButtonOnClickListener(String host, int port, String[] args) {
+        public OkButtonOnClickListener(String host, int port, String[] args, String[] files) {
             mHost = host;
             mPort = port;
             mArgs = args;
+            mFiles = files;
         }
 
         public void onClick(View view) {
@@ -80,6 +86,15 @@ public class MainActivity extends Activity {
             return md.toString();
         }
 
+        private void writeArray(JsonWriter writer, String name, String[] sa) throws IOException {
+            writer.name(name);
+            writer.beginArray();
+            for (String a: sa) {
+                writer.value(a);
+            }
+            writer.endArray();
+        }
+
         private void saveSession(String sessionId) throws IOException {
             OutputStream out = openFileOutput(sessionId, 0);
             JsonWriter writer = new JsonWriter(
@@ -88,12 +103,8 @@ public class MainActivity extends Activity {
                 writer.beginObject();
                 writer.name("host").value(mHost);
                 writer.name("port").value(mPort);
-                writer.name("args");
-                writer.beginArray();
-                for (String a: mArgs) {
-                    writer.value(a);
-                }
-                writer.endArray();
+                writeArray(writer, "args", mArgs);
+                writeArray(writer, "files", mFiles);
                 writer.endObject();
             }
             finally {
@@ -128,15 +139,24 @@ public class MainActivity extends Activity {
         String host = intent.getStringExtra("HOST");
         int port = intent.getIntExtra("PORT", 57005);
         String[] args = intent.getStringArrayExtra("ARGS");
+        String[] files = intent.getStringArrayExtra("FILES");
         setStringText(R.id.host, host);
         setIntText(R.id.port, port);
         setStringArrayText(R.id.args, args);
+        setPermissionList(files);
 
         Button okButton = (Button)findViewById(R.id.ok_button);
         okButton.setOnClickListener(
-                new OkButtonOnClickListener(host, port, args));
+                new OkButtonOnClickListener(host, port, args, files));
         Button cancelButton = (Button)findViewById(R.id.cancel_button);
         cancelButton.setOnClickListener(new CancelButtonOnClickListener());
+    }
+
+    private void setPermissionList(String[] files) {
+        AdapterView view = (AdapterView)findViewById(R.id.permission_list);
+        int id = android.R.layout.simple_list_item_1;
+        List<String> list = new ArrayList<String>();
+        view.setAdapter(new ArrayAdapter(this, id, list));
     }
 
     private TextView getTextView(int id) {

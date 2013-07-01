@@ -11,6 +11,7 @@
     <string name="args_label">Command</string>
     <string name="positive">Okey</string>
     <string name="negative">Cancel</string>
+    <string name="permission">The application requested to read/write:</string>
 </resources>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
