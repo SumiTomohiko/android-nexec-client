@@ -156,6 +156,9 @@ public class MainActivity extends Activity {
         AdapterView view = (AdapterView)findViewById(R.id.permission_list);
         int id = android.R.layout.simple_list_item_1;
         List<String> list = new ArrayList<String>();
+        for (String file: files) {
+            list.add(file);
+        }
         view.setAdapter(new ArrayAdapter(this, id, list));
     }
 
