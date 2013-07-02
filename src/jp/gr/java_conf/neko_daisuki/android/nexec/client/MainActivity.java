@@ -11,12 +11,18 @@ import java.util.List;
 import java.util.Random;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.util.JsonWriter;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View.OnClickListener;
 import android.view.View;
+import android.widget.Adapter;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -24,6 +30,183 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
+
+    private class PrivatePagerAdapter extends PagerAdapter {
+
+        private abstract class PageCreator {
+
+            public View create(ViewPager pager, int position) {
+                View view = mInflater.inflate(getResourceId(), pager, false);
+                initializeView(view);
+                pager.addView(view, position);
+                return view;
+            }
+
+            protected abstract int getResourceId();
+            protected abstract void initializeView(View view);
+
+            protected TextView getTextView(View view, int id) {
+                return (TextView)view.findViewById(id);
+            }
+        }
+
+        private class HostPageCreator extends PageCreator {
+
+            protected int getResourceId() {
+                return R.layout.page_host;
+            }
+
+            protected void initializeView(View view) {
+                setStringText(view, R.id.host, mHost);
+                setIntText(view, R.id.port, mPort);
+            }
+
+            private void setIntText(View view, int id, int n) {
+                getTextView(view, id).setText(Integer.toString(n));
+            }
+
+            private void setStringText(View view, int id, String s) {
+                getTextView(view, id).setText(s);
+            }
+        }
+
+        private class CommandPageCreator extends PageCreator {
+
+            protected int getResourceId() {
+                return R.layout.page_command;
+            }
+
+            protected void initializeView(View view) {
+                setStringArrayText(view, R.id.args, mArgs);
+            }
+
+            private void setStringArrayText(View view, int id, String[] sa) {
+                StringBuffer buffer = new StringBuffer(sa[0]);
+                for (int i = 1; i < sa.length; i++) {
+                    buffer.append(String.format(" %s", sa[i]));
+                }
+                getTextView(view, id).setText(buffer.toString());
+            }
+        }
+
+        private class PermissionPageCreator extends PageCreator {
+
+            protected int getResourceId() {
+                return R.layout.page_permission;
+            }
+
+            protected void initializeView(View view) {
+                setPermissionList(view, mFiles);
+            }
+
+            private void setPermissionList(View view, String[] files) {
+                int listId = R.id.permission_list;
+                AdapterView listView = getAdapterView(view, listId);
+
+                int id = android.R.layout.simple_list_item_1;
+
+                List<String> list = new ArrayList<String>();
+                for (String file: files) {
+                    list.add(file);
+                }
+
+                Adapter adapter = new ArrayAdapter(MainActivity.this, id, list);
+                listView.setAdapter(adapter);
+            }
+
+            private AdapterView getAdapterView(View view, int id) {
+                return (AdapterView)view.findViewById(id);
+            }
+        }
+
+        private class Page {
+
+            private PageCreator mCreator;
+            private String mTitle;
+
+            public Page(PageCreator creator, String title) {
+                mCreator = creator;
+                mTitle = title;
+            }
+
+            public PageCreator getCreator() {
+                return mCreator;
+            }
+
+            public String getTitle() {
+                return mTitle;
+            }
+        }
+
+        private static final int NUM_PAGES = 3;
+
+        private String mHost;
+        private int mPort;
+        private String[] mArgs;
+        private String[] mFiles;
+
+        private LayoutInflater mInflater;
+        private Page[] mPages;
+
+        public PrivatePagerAdapter(String host, int port, String[] args, String[] files) {
+            mHost = host;
+            mPort = port;
+            mArgs = args;
+            mFiles = files;
+
+            String key = Context.LAYOUT_INFLATER_SERVICE;
+            mInflater = (LayoutInflater)getSystemService(key);
+            mPages = new Page[] {
+                new Page(new HostPageCreator(), "Host"),
+                new Page(new CommandPageCreator(), "Command"),
+                new Page(new PermissionPageCreator(), "Permission") };
+        }
+
+        @Override
+        public void destroyItem(View collection, int position, Object view) {
+            ViewPager pager = (ViewPager)collection;
+            View v = (View)view;
+            pager.removeView(v);
+        }
+
+        @Override
+        public void finishUpdate(View collection) {
+        }
+
+        @Override
+        public int getCount() {
+            return NUM_PAGES;
+        }
+
+        @Override
+        public Object instantiateItem(View collection, int position) {
+            ViewPager pager = (ViewPager)collection;
+            return mPages[position].getCreator().create(pager, position);
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            return mPages[position].getTitle();
+        }
+
+        @Override
+        public boolean isViewFromObject(View view, Object object) {
+            return view == (View)object;
+        }
+
+        @Override
+        public void restoreState(Parcelable parcel, ClassLoader classLoader) {
+        }
+
+        @Override
+        public Parcelable saveState() {
+            return null;
+        }
+
+        @Override
+        public void startUpdate(View collection) {
+        }
+    }
 
     private class OkButtonOnClickListener implements OnClickListener {
 
@@ -140,46 +323,15 @@ public class MainActivity extends Activity {
         int port = intent.getIntExtra("PORT", 57005);
         String[] args = intent.getStringArrayExtra("ARGS");
         String[] files = intent.getStringArrayExtra("FILES");
-        setStringText(R.id.host, host);
-        setIntText(R.id.port, port);
-        setStringArrayText(R.id.args, args);
-        setPermissionList(files);
+
+        ViewPager pager = (ViewPager)findViewById(R.id.view_pager);
+        pager.setAdapter(new PrivatePagerAdapter(host, port, args, files));
 
         Button okButton = (Button)findViewById(R.id.ok_button);
         okButton.setOnClickListener(
                 new OkButtonOnClickListener(host, port, args, files));
         Button cancelButton = (Button)findViewById(R.id.cancel_button);
         cancelButton.setOnClickListener(new CancelButtonOnClickListener());
-    }
-
-    private void setPermissionList(String[] files) {
-        AdapterView view = (AdapterView)findViewById(R.id.permission_list);
-        int id = android.R.layout.simple_list_item_1;
-        List<String> list = new ArrayList<String>();
-        for (String file: files) {
-            list.add(file);
-        }
-        view.setAdapter(new ArrayAdapter(this, id, list));
-    }
-
-    private TextView getTextView(int id) {
-        return (TextView)findViewById(id);
-    }
-
-    private void setIntText(int id, int n) {
-        getTextView(id).setText(Integer.toString(n));
-    }
-
-    private void setStringArrayText(int id, String[] sa) {
-        StringBuffer buffer = new StringBuffer(sa[0]);
-        for (int i = 1; i < sa.length; i++) {
-            buffer.append(String.format(" %s", sa[i]));
-        }
-        getTextView(id).setText(buffer.toString());
-    }
-
-    private void setStringText(int id, String s) {
-        getTextView(id).setText(s);
     }
 
     private void showToast(String message) {

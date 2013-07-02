@@ -7,42 +7,15 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="@string/main_statement"/>
-    <TableLayout
+    <android.support.v4.view.ViewPager
+        android:id="@+id/view_pager"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:stretchColumns="1"
-        android:shrinkColumns="1">
-        <TableRow>
-            <TextView android:text="@string/host_label"/>
-            <EditText
-                android:id="@+id/host"
-                android:editable="false"
-                android:typeface="monospace"/>
-        </TableRow>
-        <TableRow>
-            <TextView android:text="@string/port_label"/>
-            <EditText
-                android:id="@+id/port"
-                android:editable="false"
-                android:typeface="monospace"/>
-        </TableRow>
-        <TableRow>
-            <TextView android:text="@string/args_label"/>
-            <EditText
-                android:id="@+id/args"
-                android:editable="false"
-                android:typeface="monospace"/>
-        </TableRow>
-    </TableLayout>
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/permission"/>
-    <ListView
-        android:id="@+id/permission_list"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"/>
+        android:layout_weight="1">
+        <android.support.v4.view.PagerTabStrip
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"/>
+    </android.support.v4.view.ViewPager>
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">

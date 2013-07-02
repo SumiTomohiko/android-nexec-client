@@ -8,7 +8,6 @@
     </string>
     <string name="host_label">Host</string>
     <string name="port_label">Port</string>
-    <string name="args_label">Command</string>
     <string name="positive">Okey</string>
     <string name="negative">Cancel</string>
     <string name="permission">The application requested to read/write:</string>
