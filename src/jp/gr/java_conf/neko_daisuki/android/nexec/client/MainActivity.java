@@ -160,8 +160,6 @@ public class MainActivity extends Activity {
             }
         }
 
-        private static final int NUM_PAGES = 3;
-
         private String mHost;
         private int mPort;
         private String[] mArgs;
@@ -200,7 +198,7 @@ public class MainActivity extends Activity {
 
         @Override
         public int getCount() {
-            return NUM_PAGES;
+            return mPages.length;
         }
 
         @Override
