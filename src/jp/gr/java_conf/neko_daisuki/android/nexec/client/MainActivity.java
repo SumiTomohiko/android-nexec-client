@@ -7,6 +7,7 @@ import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
@@ -47,6 +48,10 @@ public class MainActivity extends Activity {
 
             protected TextView getTextView(View view, int id) {
                 return (TextView)view.findViewById(id);
+            }
+
+            protected AdapterView getAdapterView(View view, int id) {
+                return (AdapterView)view.findViewById(id);
             }
         }
 
@@ -89,6 +94,27 @@ public class MainActivity extends Activity {
             }
         }
 
+        private class LinkPageCreator extends PageCreator {
+
+            protected int getResourceId() {
+                return R.layout.page_link;
+            }
+
+            protected void initializeView(View view) {
+                AdapterView listView = getAdapterView(view, R.id.link_list);
+
+                int id = android.R.layout.simple_list_item_1;
+
+                List<String> list = new ArrayList<String>();
+                for (Link link: mLinks) {
+                    list.add(String.format("%s -> %s", link.src, link.dest));
+                }
+
+                Adapter adapter = new ArrayAdapter(MainActivity.this, id, list);
+                listView.setAdapter(adapter);
+            }
+        }
+
         private class PermissionPageCreator extends PageCreator {
 
             protected int getResourceId() {
@@ -112,10 +138,6 @@ public class MainActivity extends Activity {
 
                 Adapter adapter = new ArrayAdapter(MainActivity.this, id, list);
                 listView.setAdapter(adapter);
-            }
-
-            private AdapterView getAdapterView(View view, int id) {
-                return (AdapterView)view.findViewById(id);
             }
         }
 
@@ -144,22 +166,25 @@ public class MainActivity extends Activity {
         private int mPort;
         private String[] mArgs;
         private String[] mFiles;
+        private Link[] mLinks;
 
         private LayoutInflater mInflater;
         private Page[] mPages;
 
-        public PrivatePagerAdapter(String host, int port, String[] args, String[] files) {
+        public PrivatePagerAdapter(String host, int port, String[] args, String[] files, Link[] links) {
             mHost = host;
             mPort = port;
             mArgs = args;
             mFiles = files;
+            mLinks = links;
 
             String key = Context.LAYOUT_INFLATER_SERVICE;
             mInflater = (LayoutInflater)getSystemService(key);
             mPages = new Page[] {
                 new Page(new HostPageCreator(), "Host"),
                 new Page(new CommandPageCreator(), "Command"),
-                new Page(new PermissionPageCreator(), "Permission") };
+                new Page(new PermissionPageCreator(), "Permission"),
+                new Page(new LinkPageCreator(), "Redirection") };
         }
 
         @Override
@@ -214,12 +239,14 @@ public class MainActivity extends Activity {
         private int mPort;
         private String[] mArgs;
         private String[] mFiles;
+        private Link[] mLinks;
 
-        public OkButtonOnClickListener(String host, int port, String[] args, String[] files) {
+        public OkButtonOnClickListener(String host, int port, String[] args, String[] files, Link[] links) {
             mHost = host;
             mPort = port;
             mArgs = args;
             mFiles = files;
+            mLinks = links;
         }
 
         public void onClick(View view) {
@@ -269,7 +296,19 @@ public class MainActivity extends Activity {
             return md.toString();
         }
 
-        private void writeArray(JsonWriter writer, String name, String[] sa) throws IOException {
+        private void writeLinkArray(JsonWriter writer, String name, Link[] links) throws IOException {
+            writer.name(name);
+            writer.beginArray();
+            for (Link link: links) {
+                writer.beginObject();
+                writer.name("dest").value(link.dest);
+                writer.name("src").value(link.src);
+                writer.endObject();
+            }
+            writer.endArray();
+        }
+
+        private void writeStringArray(JsonWriter writer, String name, String[] sa) throws IOException {
             writer.name(name);
             writer.beginArray();
             for (String a: sa) {
@@ -286,8 +325,9 @@ public class MainActivity extends Activity {
                 writer.beginObject();
                 writer.name("host").value(mHost);
                 writer.name("port").value(mPort);
-                writeArray(writer, "args", mArgs);
-                writeArray(writer, "files", mFiles);
+                writeStringArray(writer, "args", mArgs);
+                writeStringArray(writer, "files", mFiles);
+                writeLinkArray(writer, "links", mLinks);
                 writer.endObject();
             }
             finally {
@@ -301,6 +341,17 @@ public class MainActivity extends Activity {
         public void onClick(View view) {
             setResult(RESULT_CANCELED, getIntent());
             finish();
+        }
+    }
+
+    private static class Link {
+
+        public String dest;
+        public String src;
+
+        public Link(String dest, String src) {
+            this.dest = dest;
+            this.src = src;
         }
     }
 
@@ -323,15 +374,43 @@ public class MainActivity extends Activity {
         int port = intent.getIntExtra("PORT", 57005);
         String[] args = intent.getStringArrayExtra("ARGS");
         String[] files = intent.getStringArrayExtra("FILES");
+        Link[] links = parseLinks(intent.getStringArrayExtra("LINKS"));
 
         ViewPager pager = (ViewPager)findViewById(R.id.view_pager);
-        pager.setAdapter(new PrivatePagerAdapter(host, port, args, files));
+        pager.setAdapter(
+                new PrivatePagerAdapter(host, port, args, files, links));
 
         Button okButton = (Button)findViewById(R.id.ok_button);
         okButton.setOnClickListener(
-                new OkButtonOnClickListener(host, port, args, files));
+                new OkButtonOnClickListener(host, port, args, files, links));
         Button cancelButton = (Button)findViewById(R.id.cancel_button);
         cancelButton.setOnClickListener(new CancelButtonOnClickListener());
+    }
+
+    private Link parseLink(String s) {
+        StringBuilder dest = new StringBuilder();
+        int i;
+        for (i = 0; s.charAt(i) != ':'; i++) {
+            i += s.charAt(i) == '\\' ? 1 : 0;
+            dest.append(s.charAt(i));
+        }
+
+        StringBuilder src = new StringBuilder();
+        int len = s.length();
+        for (i = i + 1; i < len; i++) {
+            i += s.charAt(i) == '\\' ? 1 : 0;
+            src.append(s.charAt(i));
+        }
+
+        return new Link(dest.toString(), src.toString());
+    }
+
+    private Link[] parseLinks(String[] links) {
+        List<Link> l = new LinkedList<Link>();
+        for (String link: links) {
+            l.add(parseLink(link));
+        }
+        return l.toArray(new Link[0]);
     }
 
     private void showToast(String message) {

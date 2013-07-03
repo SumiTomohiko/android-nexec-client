@@ -23,6 +23,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
+import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Links;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
@@ -140,7 +141,7 @@ public class MainService extends Service {
                 nexec.run(
                         mSession.host, mSession.port, mSession.args,
                         mStdin, mStdout, mStderr,
-                        perm);
+                        perm, mSession.links);
             }
             catch (ProtocolException e) {
                 showException("protocol error", e);
@@ -205,6 +206,7 @@ public class MainService extends Service {
         public int port;
         public String[] args = new String[0];
         public String[] files = new String[0];
+        public Links links;
     }
 
     private static final String TAG = "nexec client";
@@ -257,6 +259,33 @@ public class MainService extends Service {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
+    private Links readLinks(JsonReader reader) throws IOException {
+        Links links = new Links();
+
+        reader.beginArray();
+        while (reader.hasNext()) {
+            String dest = null;
+            String src = null;
+
+            reader.beginObject();
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+                if (name.equals("dest")) {
+                    dest = reader.nextString();
+                }
+                else if (name.equals("src")) {
+                    src = reader.nextString();
+                }
+            }
+            reader.endObject();
+
+            links.put(dest, src);
+        }
+        reader.endArray();
+
+        return links;
+    }
+
     private String[] readArray(JsonReader reader) throws IOException {
         List<String> list = new LinkedList<String>();
 
@@ -289,6 +318,9 @@ public class MainService extends Service {
                 }
                 else if (name.equals("files")) {
                     session.files = readArray(reader);
+                }
+                else if (name.equals("links")) {
+                    session.links = readLinks(reader);
                 }
             }
             reader.endObject();

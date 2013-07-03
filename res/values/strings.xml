@@ -11,6 +11,9 @@
     <string name="positive">Okey</string>
     <string name="negative">Cancel</string>
     <string name="permission">The application requested to read/write:</string>
+    <string name="link_statement">
+        The application has requested to redirect:
+    </string>
 </resources>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
