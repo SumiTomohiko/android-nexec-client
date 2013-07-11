@@ -1,5 +1,6 @@
 .settings
 bin
+doc/index.html
 gen
 ic_launcher-web.png
 jp.gr.java_conf.neko_daisuki.android.nexec.client
