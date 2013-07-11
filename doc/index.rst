@@ -74,4 +74,28 @@ Redirection page
 
 .. image:: redirection_page.png
 
+Anything else
+=============
+
+License
+-------
+
+nexec client for Android is under `the MIT license`_.
+
+.. _the MIT license:
+    https://github.com/SumiTomohiko/android-nexec-client/blob/master/COPYING.rst#mit-license
+
+GitHub repository
+-----------------
+
+GitHub repository of this is
+https://github.com/SumiTomohiko/android-nexec-client.
+
+Author
+------
+
+The author of this is `Tomohiko Sumi`_.
+
+.. _Tomohiko Sumi: http://neko-daisuki.ddo.jp/~SumiTomohiko/index.html
+
 .. vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
