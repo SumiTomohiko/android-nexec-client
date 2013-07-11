@@ -60,12 +60,12 @@ You can see what command will be executed in this page.
 
 .. image:: command_page.png
 
-Files page
-----------
+Permission page
+---------------
 
 Files in this page are what the application requested to open/read/write.
 
-.. image:: file_page.png
+.. image:: permission_page.png
 
 Redirection page
 ----------------
