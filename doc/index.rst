@@ -2,6 +2,8 @@
 nexec client for Android
 ************************
 
+.. contents:: Table of contents
+
 Overview
 ========
 
