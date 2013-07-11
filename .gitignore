@@ -1,8 +1,9 @@
 .settings
+/ic_launcher-web.png
 bin
+doc/ic_launcher-web.png
 doc/index.html
 gen
-ic_launcher-web.png
 jp.gr.java_conf.neko_daisuki.android.nexec.client
 local.properties
 res/drawable-hdpi/ic_launcher.png

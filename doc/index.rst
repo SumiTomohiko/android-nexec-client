@@ -2,6 +2,8 @@
 nexec client for Android
 ************************
 
+.. image:: ic_launcher-web.png
+
 .. contents:: Table of contents
 
 Overview

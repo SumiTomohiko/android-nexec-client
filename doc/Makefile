@@ -1,5 +1,5 @@
 
-all: index.html
+all: index.html ic_launcher-web.png
 
 .SUFFIXES: .rst .html .svg .png
 
@@ -12,3 +12,6 @@ all: index.html
 
 clean:
 	rm -f *.html
+
+ic_launcher-web.png: ../ic_launcher-web.png
+	cp -f ../ic_launcher-web.png .
