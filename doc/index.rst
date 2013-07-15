@@ -28,6 +28,13 @@ The other is redirection of file access. If an application in a master machine
 requested to open a file, this service can open another file instead of the
 requested one.
 
+Google play
+===========
+
+This application is available at `Google play`_.
+
+.. _Google play: https://play.google.com/store/apps/details?id=jp.gr.java_conf.neko_daisuki.android.nexec.client
+
 How to use
 ==========
 
