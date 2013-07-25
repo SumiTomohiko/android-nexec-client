@@ -44,9 +44,15 @@ This is not a launcher application but a service.
 This is not a launcher application. You can use this with other applications
 such as `android-nexec-client-demo`_ or `animator`_.
 
+The `android-nexec-client-demo`_ page prepares `a tutorial section`_. This is a
+good place to start nexec_.
+
 .. _android-nexec-client-demo:
     http://neko-daisuki.ddo.jp/~SumiTomohiko/android-nexec-client-demo/index.html
 .. _animator: http://neko-daisuki.ddo.jp/~SumiTomohiko/animator/index.html
+.. _a tutorial section:
+    http://neko-daisuki.ddo.jp/~SumiTomohiko/android-nexec-client-demo/index.html#tutorial
+
 
 If your application had requested to nexec, this service shows the following
 screen to show you what the application had requested. When you dislike these
