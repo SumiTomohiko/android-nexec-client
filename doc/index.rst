@@ -53,6 +53,8 @@ good place to start nexec_.
 .. _a tutorial section:
     http://neko-daisuki.ddo.jp/~SumiTomohiko/android-nexec-client-demo/index.html#tutorial
 
+Confirmation pages
+------------------
 
 If your application had requested to nexec, this service shows the following
 screen to show you what the application had requested. When you dislike these
@@ -60,7 +62,7 @@ settings, you can cancel. Of cource, if you want to accept, please push "Okey".
 This service will connect with the server to run the command.
 
 Host page
----------
+.........
 
 This page shows you the nexec server information.
 
@@ -68,7 +70,7 @@ This page shows you the nexec server information.
     :target: host_page.png
 
 Command page
-------------
+............
 
 You can see what command will be executed in this page.
 
@@ -76,7 +78,7 @@ You can see what command will be executed in this page.
     :target: command_page.png
 
 Permission page
----------------
+...............
 
 Files in this page are what the application requested to open/read/write.
 
@@ -84,7 +86,7 @@ Files in this page are what the application requested to open/read/write.
     :target: permission_page.png
 
 Redirection page
-----------------
+................
 
 "Redirection" page shows sources/destination of redirection.
 

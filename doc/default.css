@@ -19,6 +19,10 @@ div.section > h2 {
     padding-left: 8px;
 }
 
+div.section > h3 {
+    margin-left: 32px;
+}
+
 div.contents {
     border-style: solid;
     margin-left: 48px;
