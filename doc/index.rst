@@ -58,28 +58,32 @@ Host page
 
 This page shows you the nexec server information.
 
-.. image:: host_page.png
+.. image:: host_page-thumb.png
+    :target: host_page.png
 
 Command page
 ------------
 
 You can see what command will be executed in this page.
 
-.. image:: command_page.png
+.. image:: command_page-thumb.png
+    :target: command_page.png
 
 Permission page
 ---------------
 
 Files in this page are what the application requested to open/read/write.
 
-.. image:: permission_page.png
+.. image:: permission_page-thumb.png
+    :target: permission_page.png
 
 Redirection page
 ----------------
 
 "Redirection" page shows sources/destination of redirection.
 
-.. image:: redirection_page.png
+.. image:: redirection_page-thumb.png
+    :target: redirection_page.png
 
 Anything else
 =============

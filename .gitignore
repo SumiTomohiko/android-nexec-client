@@ -1,7 +1,11 @@
 .settings
 /ic_launcher-web.png
 bin
+doc/command_page-thumb.png
+doc/host_page-thumb.png
 doc/index.html
+doc/permission_page-thumb.png
+doc/redirection_page-thumb.png
 gen
 jp.gr.java_conf.neko_daisuki.android.nexec.client
 local.properties
