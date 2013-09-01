@@ -176,17 +176,25 @@ public class MainService extends Service {
                 return;
             }
 
-            Byte b = mTask.getStdout().read();
-            if (b == null) {
-                if (mTask.getStatus() == AsyncTask.Status.FINISHED) {
-                    sendReply(msg, Message.obtain(null, MessageWhat.FINISHED));
-                }
+            Byte out = mTask.getStdout().read();
+            if (out != null) {
+                int type = MessageWhat.STDOUT;
+                int arg1 = out.byteValue();
+                sendReply(msg, Message.obtain(null, type, arg1, 0));
                 return;
             }
 
-            int type = MessageWhat.STDOUT;
-            int arg1 = b.byteValue();
-            sendReply(msg, Message.obtain(null, type, arg1, 0, null));
+            Byte err = mTask.getStderr().read();
+            if (err != null) {
+                int type = MessageWhat.STDERR;
+                int arg1 = err.byteValue();
+                sendReply(msg, Message.obtain(null, type, arg1, 0));
+                return;
+            }
+
+            if (mTask.getStatus() == AsyncTask.Status.FINISHED) {
+                sendReply(msg, Message.obtain(null, MessageWhat.FINISHED));
+            }
         }
 
         private void sendReply(Message msg, Message reply) {
