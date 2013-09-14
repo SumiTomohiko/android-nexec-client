@@ -25,6 +25,7 @@ import android.widget.Toast;
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Links;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
+import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient.Environment;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
 
@@ -141,7 +142,7 @@ public class MainService extends Service {
                 nexec.run(
                         mSession.host, mSession.port, mSession.args,
                         mStdin, mStdout, mStderr,
-                        perm, mSession.links);
+                        mSession.env, perm, mSession.links);
             }
             catch (ProtocolException e) {
                 showException("protocol error", e);
@@ -213,6 +214,7 @@ public class MainService extends Service {
         public String host = "";
         public int port;
         public String[] args = new String[0];
+        public Environment env;
         public String[] files = new String[0];
         public Links links;
     }
@@ -306,6 +308,35 @@ public class MainService extends Service {
         return list.toArray(new String[0]);
     }
 
+    private Environment readEnvironment(JsonReader reader) throws IOException {
+        Environment env = new Environment();
+
+        reader.beginArray();
+        while (reader.hasNext()) {
+            String key = null;
+            String value = null;
+
+            reader.beginObject();
+            while (reader.hasNext()) {
+                String name = reader.nextName();
+                if (name.equals("name")) {
+                    key = reader.nextString();
+                }
+                else if (name.equals("value")) {
+                    value = reader.nextString();
+                }
+            }
+            reader.endObject();
+
+            if ((key != null) && (value != null)) {
+                env.put(key, value);
+            }
+        }
+        reader.endArray();
+
+        return env;
+    }
+
     private Session readSessionFile(String sessionId) throws IOException {
         Session session = new Session();
 
@@ -323,6 +354,9 @@ public class MainService extends Service {
                 }
                 else if (name.equals("args")) {
                     session.args = readArray(reader);
+                }
+                else if (name.equals("env")) {
+                    session.env = readEnvironment(reader);
                 }
                 else if (name.equals("files")) {
                     session.files = readArray(reader);

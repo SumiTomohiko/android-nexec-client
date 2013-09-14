@@ -94,6 +94,27 @@ public class MainActivity extends Activity {
             }
         }
 
+        private class EnvPageCreator extends PageCreator {
+
+            protected int getResourceId() {
+                return R.layout.page_environment;
+            }
+
+            protected void initializeView(View view) {
+                AdapterView listView = getAdapterView(view, R.id.env_list);
+
+                int id = android.R.layout.simple_list_item_1;
+
+                List<String> list = new ArrayList<String>();
+                for (Environment env: mEnv) {
+                    list.add(String.format("%s=%s", env.name, env.value));
+                }
+
+                Adapter adapter = new ArrayAdapter(MainActivity.this, id, list);
+                listView.setAdapter(adapter);
+            }
+        }
+
         private class LinkPageCreator extends PageCreator {
 
             protected int getResourceId() {
@@ -163,16 +184,18 @@ public class MainActivity extends Activity {
         private String mHost;
         private int mPort;
         private String[] mArgs;
+        private Environment[] mEnv;
         private String[] mFiles;
         private Link[] mLinks;
 
         private LayoutInflater mInflater;
         private Page[] mPages;
 
-        public PrivatePagerAdapter(String host, int port, String[] args, String[] files, Link[] links) {
+        public PrivatePagerAdapter(String host, int port, String[] args, Environment[] env, String[] files, Link[] links) {
             mHost = host;
             mPort = port;
             mArgs = args;
+            mEnv = env;
             mFiles = files;
             mLinks = links;
 
@@ -181,6 +204,7 @@ public class MainActivity extends Activity {
             mPages = new Page[] {
                 new Page(new HostPageCreator(), "Host"),
                 new Page(new CommandPageCreator(), "Command"),
+                new Page(new EnvPageCreator(), "Environment"),
                 new Page(new PermissionPageCreator(), "Permission"),
                 new Page(new LinkPageCreator(), "Redirection") };
         }
@@ -236,13 +260,15 @@ public class MainActivity extends Activity {
         private String mHost;
         private int mPort;
         private String[] mArgs;
+        private Environment[] mEnv;
         private String[] mFiles;
         private Link[] mLinks;
 
-        public OkButtonOnClickListener(String host, int port, String[] args, String[] files, Link[] links) {
+        public OkButtonOnClickListener(String host, int port, String[] args, Environment[] env, String[] files, Link[] links) {
             mHost = host;
             mPort = port;
             mArgs = args;
+            mEnv = env;
             mFiles = files;
             mLinks = links;
         }
@@ -294,6 +320,18 @@ public class MainActivity extends Activity {
             return md.toString();
         }
 
+        private void writeEnvironmentArray(JsonWriter writer, String name, Environment[] env) throws IOException {
+            writer.name(name);
+            writer.beginArray();
+            for (Environment e: env) {
+                writer.beginObject();
+                writer.name("name").value(e.name);
+                writer.name("value").value(e.value);
+                writer.endObject();
+            }
+            writer.endArray();
+        }
+
         private void writeLinkArray(JsonWriter writer, String name, Link[] links) throws IOException {
             writer.name(name);
             writer.beginArray();
@@ -324,6 +362,7 @@ public class MainActivity extends Activity {
                 writer.name("host").value(mHost);
                 writer.name("port").value(mPort);
                 writeStringArray(writer, "args", mArgs);
+                writeEnvironmentArray(writer, "env", mEnv);
                 writeStringArray(writer, "files", mFiles);
                 writeLinkArray(writer, "links", mLinks);
                 writer.endObject();
@@ -339,6 +378,17 @@ public class MainActivity extends Activity {
         public void onClick(View view) {
             setResult(RESULT_CANCELED, getIntent());
             finish();
+        }
+    }
+
+    private static class Environment {
+
+        public String name;
+        public String value;
+
+        public Environment(String name, String value) {
+            this.name = name;
+            this.value = value;
         }
     }
 
@@ -371,36 +421,43 @@ public class MainActivity extends Activity {
         String host = intent.getStringExtra("HOST");
         int port = intent.getIntExtra("PORT", 57005);
         String[] args = intent.getStringArrayExtra("ARGS");
+        Environment[] env = getEnvironments(intent);
         String[] files = intent.getStringArrayExtra("FILES");
         Link[] links = parseLinks(intent.getStringArrayExtra("LINKS"));
 
         ViewPager pager = (ViewPager)findViewById(R.id.view_pager);
         pager.setAdapter(
-                new PrivatePagerAdapter(host, port, args, files, links));
+                new PrivatePagerAdapter(host, port, args, env, files, links));
 
         Button okButton = (Button)findViewById(R.id.ok_button);
         okButton.setOnClickListener(
-                new OkButtonOnClickListener(host, port, args, files, links));
+                new OkButtonOnClickListener(
+                        host, port, args, env, files, links));
         Button cancelButton = (Button)findViewById(R.id.cancel_button);
         cancelButton.setOnClickListener(new CancelButtonOnClickListener());
     }
 
-    private Link parseLink(String s) {
-        StringBuilder dest = new StringBuilder();
+    private String[] splitFields(String s) {
+        StringBuilder buffer = new StringBuilder();
         int i;
         for (i = 0; s.charAt(i) != ':'; i++) {
             i += s.charAt(i) == '\\' ? 1 : 0;
-            dest.append(s.charAt(i));
+            buffer.append(s.charAt(i));
         }
 
-        StringBuilder src = new StringBuilder();
+        StringBuilder buffer2 = new StringBuilder();
         int len = s.length();
         for (i = i + 1; i < len; i++) {
             i += s.charAt(i) == '\\' ? 1 : 0;
-            src.append(s.charAt(i));
+            buffer2.append(s.charAt(i));
         }
 
-        return new Link(dest.toString(), src.toString());
+        return new String[] { buffer.toString(), buffer2.toString() };
+    }
+
+    private Link parseLink(String s) {
+        String[] fields = splitFields(s);
+        return new Link(fields[0], fields[1]);
     }
 
     private Link[] parseLinks(String[] links) {
@@ -413,6 +470,23 @@ public class MainActivity extends Activity {
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    private Environment parseEnvironment(String s) {
+        String[] fields = splitFields(s);
+        return new Environment(fields[0], fields[1]);
+    }
+
+    private Environment[] parseEnvironments(String[] sa) {
+        List<Environment> l = new LinkedList<Environment>();
+        for (String s: sa) {
+            l.add(parseEnvironment(s));
+        }
+        return l.toArray(new Environment[0]);
+    }
+
+    private Environment[] getEnvironments(Intent intent) {
+        return parseEnvironments(intent.getStringArrayExtra("ENV"));
     }
 }
 
