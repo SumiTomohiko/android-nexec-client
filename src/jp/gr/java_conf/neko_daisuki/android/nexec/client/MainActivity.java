@@ -39,7 +39,7 @@ public class MainActivity extends Activity {
             public View create(ViewPager pager, int position) {
                 View view = mInflater.inflate(getResourceId(), pager, false);
                 initializeView(view);
-                pager.addView(view, position);
+                pager.addView(view);
                 return view;
             }
 
