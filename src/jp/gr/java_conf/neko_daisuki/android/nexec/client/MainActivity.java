@@ -301,6 +301,14 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
+        private String stringOfDigest(byte[] input) {
+            StringBuilder buffer = new StringBuilder();
+            for (int i = 0; i < input.length; i++) {
+                buffer.append(String.format("%02x", input[i]));
+            }
+            return buffer.toString();
+        }
+
         private String createSessionId() throws NoSuchAlgorithmException {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(mHost.getBytes());
@@ -317,7 +325,7 @@ public class MainActivity extends Activity {
             byte[] bytes = new byte[32];
             mRandom.nextBytes(bytes);
             md.update(bytes);
-            return md.toString();
+            return stringOfDigest(md.digest());
         }
 
         private void writeEnvironmentArray(JsonWriter writer, String name, Environment[] env) throws IOException {
