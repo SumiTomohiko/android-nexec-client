@@ -106,8 +106,6 @@ public class MainService extends Service {
         private Output mStderr;
 
         public Task(Session session, Input stdin, Output stdout, Output stderr) {
-            super();
-
             mSession = session;
             mStdin = stdin;
             mStdout = stdout;
