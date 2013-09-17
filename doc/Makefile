@@ -1,6 +1,7 @@
 
-THUMBNAILS=	command_page-thumb.png host_page-thumb.png \
-		permission_page-thumb.png redirection_page-thumb.png
+THUMBNAILS=	command_page-thumb.png environment_page-thumb.png 	\
+		host_page-thumb.png permission_page-thumb.png 		\
+		redirection_page-thumb.png
 CONVERT=	convert -thumbnail 640x
 
 all: index.html $(THUMBNAILS)
@@ -22,6 +23,9 @@ command_page-thumb.png: command_page.png
 
 host_page-thumb.png: host_page.png
 	$(CONVERT) host_page.png host_page-thumb.png
+
+environment_page-thumb.png: environment_page.png
+	$(CONVERT) environment_page.png environment_page-thumb.png
 
 permission_page-thumb.png: permission_page.png
 	$(CONVERT) permission_page.png permission_page-thumb.png

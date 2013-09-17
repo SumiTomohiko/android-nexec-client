@@ -77,6 +77,15 @@ You can see what command will be executed in this page.
 .. image:: command_page-thumb.png
     :target: command_page.png
 
+Environment page
+................
+
+If your application wants to set one or more environment variables, this page
+tells you.
+
+.. image:: environment_page-thumb.png
+    :target: environment_page.png
+
 Permission page
 ...............
 
