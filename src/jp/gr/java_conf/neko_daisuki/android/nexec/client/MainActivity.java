@@ -50,8 +50,9 @@ public class MainActivity extends Activity {
                 return (TextView)view.findViewById(id);
             }
 
-            protected AdapterView getAdapterView(View view, int id) {
-                return (AdapterView)view.findViewById(id);
+            @SuppressWarnings("unchecked")
+            protected AdapterView<Adapter> getAdapterView(View view, int id) {
+                return (AdapterView<Adapter>)view.findViewById(id);
             }
         }
 
@@ -101,7 +102,8 @@ public class MainActivity extends Activity {
             }
 
             protected void initializeView(View view) {
-                AdapterView listView = getAdapterView(view, R.id.env_list);
+                AdapterView<Adapter> listView = getAdapterView(view,
+                                                               R.id.env_list);
 
                 int id = android.R.layout.simple_list_item_1;
 
@@ -110,7 +112,9 @@ public class MainActivity extends Activity {
                     list.add(String.format("%s=%s", env.name, env.value));
                 }
 
-                Adapter adapter = new ArrayAdapter(MainActivity.this, id, list);
+                Adapter adapter = new ArrayAdapter<String>(MainActivity.this,
+                                                           id,
+                                                           list);
                 listView.setAdapter(adapter);
             }
         }
@@ -122,7 +126,8 @@ public class MainActivity extends Activity {
             }
 
             protected void initializeView(View view) {
-                AdapterView listView = getAdapterView(view, R.id.link_list);
+                AdapterView<Adapter> listView = getAdapterView(view,
+                                                               R.id.link_list);
 
                 int id = android.R.layout.simple_list_item_1;
 
@@ -131,7 +136,9 @@ public class MainActivity extends Activity {
                     list.add(String.format("%s -> %s", link.src, link.dest));
                 }
 
-                Adapter adapter = new ArrayAdapter(MainActivity.this, id, list);
+                Adapter adapter = new ArrayAdapter<String>(MainActivity.this,
+                                                           id,
+                                                           list);
                 listView.setAdapter(adapter);
             }
         }
@@ -148,7 +155,7 @@ public class MainActivity extends Activity {
 
             private void setPermissionList(View view, String[] files) {
                 int listId = R.id.permission_list;
-                AdapterView listView = getAdapterView(view, listId);
+                AdapterView<Adapter> listView = getAdapterView(view, listId);
 
                 int id = android.R.layout.simple_list_item_1;
 
@@ -157,7 +164,9 @@ public class MainActivity extends Activity {
                     list.add(file);
                 }
 
-                Adapter adapter = new ArrayAdapter(MainActivity.this, id, list);
+                Adapter adapter = new ArrayAdapter<String>(MainActivity.this,
+                                                           id,
+                                                           list);
                 listView.setAdapter(adapter);
             }
         }
