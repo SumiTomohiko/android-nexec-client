@@ -7,8 +7,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import android.app.Service;
 import android.content.Intent;
@@ -20,6 +20,7 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.JsonReader;
 import android.util.Log;
+import android.util.SparseArray;
 import android.widget.Toast;
 
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
@@ -54,38 +55,42 @@ public class MainService extends Service {
         }
     }
 
-    private static class Input extends InputStream {
-
-        private Queue<Byte> mQueue;
-
-        public Input() {
-            mQueue = new ConcurrentLinkedQueue<Byte>();
-        }
-
-        public int read() throws IOException {
-            Byte b = mQueue.poll();
-            return b != null ? b.byteValue() : -1;
-        }
-    }
-
-    private static class Output extends OutputStream {
-
-        private Queue<Byte> mQueue;
-
-        public Output() {
-            mQueue = new ConcurrentLinkedQueue<Byte>();
-        }
-
-        public void write(int b) throws IOException {
-            mQueue.add(Byte.valueOf((byte)b));
-        }
-
-        public Byte read() {
-            return mQueue.poll();
-        }
-    }
-
     private class Task extends AsyncTask<Void, Void, Void> {
+
+        private abstract class MessengerWrapper {
+
+            public abstract void send(Message msg);
+
+            public void sendIntMessage(int what, int arg1) {
+                send(Message.obtain(null, what, arg1, 0));
+            }
+        }
+
+        private class TrueMessenger extends MessengerWrapper {
+
+            private Messenger mMessenger;
+
+            public TrueMessenger(Messenger messenger) {
+                mMessenger = messenger;
+            }
+
+            @Override
+            public void send(Message msg) {
+                try {
+                    mMessenger.send(msg);
+                }
+                catch (RemoteException e) {
+                    showException("Cannot send message", e);
+                }
+            }
+        }
+
+        private class FakeMessenger extends MessengerWrapper {
+
+            @Override
+            public void send(Message msg) {
+            }
+        }
 
         private class ExceptionProcessor implements Runnable {
 
@@ -100,28 +105,48 @@ public class MainService extends Service {
             }
         }
 
-        private Session mSession;
-        private Input mStdin;
-        private Output mStdout;
-        private Output mStderr;
+        private class Input extends InputStream {
 
-        public Task(Session session, Input stdin, Output stdout, Output stderr) {
-            mSession = session;
-            mStdin = stdin;
-            mStdout = stdout;
-            mStderr = stderr;
+            @Override
+            public int read() throws IOException {
+                // TODO
+                return 0;
+            }
         }
 
-        public Input getStdin() {
-            return mStdin;
+        private class Stdout extends OutputStream {
+
+            @Override
+            public void write(int b) throws IOException {
+                mMessenger.sendIntMessage(MessageWhat.MSG_STDOUT, b);
+            }
         }
 
-        public Output getStdout() {
-            return mStdout;
+        private class Stderr extends OutputStream {
+
+            @Override
+            public void write(int b) throws IOException {
+                mMessenger.sendIntMessage(MessageWhat.MSG_STDERR, b);
+            }
         }
 
-        public Output getStderr() {
-            return mStderr;
+        private final MessengerWrapper FAKE_MESSENGER = new FakeMessenger();
+
+        private SessionParameter mSessionParameter;
+
+        private MessengerWrapper mMessenger = FAKE_MESSENGER;
+        private InputStream mStdin = new Input();
+        private OutputStream mStdout = new Stdout();
+        private OutputStream mStderr = new Stderr();
+
+        public Task(SessionParameter param) {
+            mSessionParameter = param;
+        }
+
+        public void setMessengerToClient(Messenger messenger) {
+            mMessenger = messenger != null
+                    ? new TrueMessenger(messenger)
+                    : FAKE_MESSENGER;
         }
 
         protected Void doInBackground(Void... params) {
@@ -131,16 +156,17 @@ public class MainService extends Service {
 
         private void run() {
             Permissions perm = new Permissions();
-            for (String path: mSession.files) {
+            for (String path: mSessionParameter.files) {
                 perm.allowPath(path);
             }
 
             NexecClient nexec = new NexecClient();
             try {
-                nexec.run(
-                        mSession.host, mSession.port, mSession.args,
-                        mStdin, mStdout, mStderr,
-                        mSession.env, perm, mSession.links);
+                int exitCode = nexec.run(
+                        mSessionParameter.host, mSessionParameter.port,
+                        mSessionParameter.args, mStdin, mStdout, mStderr,
+                        mSessionParameter.env, perm, mSessionParameter.links);
+                mMessenger.sendIntMessage(MessageWhat.MSG_EXIT, exitCode);
             }
             catch (ProtocolException e) {
                 showException("protocol error", e);
@@ -163,51 +189,59 @@ public class MainService extends Service {
 
     private static class IncomingHandler extends Handler {
 
-        private Task mTask;
+        private interface MessageHandler {
 
-        public IncomingHandler(Task task) {
+            public void handle(Message msg);
+        }
+
+        private class ConnectHandler implements MessageHandler {
+
+            public void handle(Message msg) {
+                mTask.setMessengerToClient(msg.replyTo);
+            }
+        }
+
+        private class DisconnectHandler implements MessageHandler {
+
+            @Override
+            public void handle(Message msg) {
+                mTask.setMessengerToClient(null);
+            }
+        }
+
+        private class QuitHandler implements MessageHandler {
+
+            @Override
+            public void handle(Message msg) {
+                mTask.cancel(true);
+                mTask.setMessengerToClient(null);
+                mQuitCallback.quit();
+            }
+        }
+
+        // documents
+        private Task mTask;
+        private QuitCallback mQuitCallback;
+
+        // helpers
+        private SparseArray<MessageHandler> mHandlers;
+
+        public IncomingHandler(Task task, QuitCallback quitCallback) {
             mTask = task;
+            mQuitCallback = quitCallback;
+
+            mHandlers = new SparseArray<MessageHandler>();
+            mHandlers.put(MessageWhat.MSG_CONNECT, new ConnectHandler());
+            mHandlers.put(MessageWhat.MSG_DISCONNECT, new DisconnectHandler());
+            mHandlers.put(MessageWhat.MSG_QUIT, new QuitHandler());
         }
 
         public void handleMessage(Message msg) {
-            if (msg.what != MessageWhat.TELL_STATUS) {
-                super.handleMessage(msg);
-                return;
-            }
-
-            Byte out = mTask.getStdout().read();
-            if (out != null) {
-                int type = MessageWhat.STDOUT;
-                int arg1 = out.byteValue();
-                sendReply(msg, Message.obtain(null, type, arg1, 0));
-                return;
-            }
-
-            Byte err = mTask.getStderr().read();
-            if (err != null) {
-                int type = MessageWhat.STDERR;
-                int arg1 = err.byteValue();
-                sendReply(msg, Message.obtain(null, type, arg1, 0));
-                return;
-            }
-
-            if (mTask.getStatus() == AsyncTask.Status.FINISHED) {
-                sendReply(msg, Message.obtain(null, MessageWhat.FINISHED));
-            }
-        }
-
-        private void sendReply(Message msg, Message reply) {
-            try {
-                msg.replyTo.send(reply);
-            }
-            catch (RemoteException e) {
-                e.printStackTrace();
-                // TODO: Show error.
-            }
+            mHandlers.get(msg.what).handle(msg);
         }
     }
 
-    private static class Session {
+    private static class SessionParameter {
 
         public String host = "";
         public int port;
@@ -217,8 +251,85 @@ public class MainService extends Service {
         public Links links;
     }
 
+    private static class Session {
+
+        private Task mTask;
+
+        public Session(Task task) {
+            mTask = task;
+        }
+
+        public Task getTask() {
+            return mTask;
+        }
+    }
+
+    private static class SessionId {
+
+        private String mId;
+
+        public SessionId(String id) {
+            mId = id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            try {
+                return ((SessionId)o).toString().equals(mId);
+            }
+            catch (ClassCastException e) {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            return mId.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return mId;
+        }
+    }
+
+    private static class Sessions {
+
+        private Map<SessionId, Session> mMap;
+
+        public Sessions() {
+            mMap = new ConcurrentHashMap<SessionId, Session>();
+        }
+
+        public void put(SessionId sessionId, Session session) {
+            mMap.put(sessionId, session);
+        }
+
+        public Session get(SessionId sessionId) {
+            return mMap.get(sessionId);
+        }
+
+        public void remove(SessionId sessionId) {
+            mMap.remove(sessionId);
+        }
+    }
+
+    private class QuitCallback {
+
+        private SessionId mSessionId;
+
+        public QuitCallback(SessionId sessionId) {
+            mSessionId = sessionId;
+        }
+
+        public void quit() {
+            mSessions.remove(mSessionId);
+        }
+    }
+
     private static final String TAG = "nexec client";
 
+    private Sessions mSessions = new Sessions();
     private Handler mHandler = new Handler();
 
     public void onCreate() {
@@ -229,13 +340,30 @@ public class MainService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        String sessionId = intent.getStringExtra("SESSION_ID");
-        Session session;
+        String key = "SESSION_ID";
+        SessionId sessionId = new SessionId(intent.getStringExtra(key));
+        Task task = getTask(sessionId);
+        return task != null ? createBinder(task, sessionId) : null;
+    }
+
+    private IBinder createBinder(Task task, SessionId sessionId) {
+        QuitCallback quitCallback = new QuitCallback(sessionId);
+        Handler handler = new IncomingHandler(task, quitCallback);
+        return new Messenger(handler).getBinder();
+    }
+
+    private Task getTask(SessionId sessionId) {
+        Session session = mSessions.get(sessionId);
+        return session != null ? session.getTask() : createTask(sessionId);
+    }
+
+    private Task createTask(SessionId sessionId) {
+        SessionParameter param;
         try {
-            session = readSessionFile(sessionId);
+            param = readSessionParameter(sessionId);
         }
         catch (IOException e) {
-            String fmt = "failed to read session information: %s: %s";
+            String fmt = "failed to read session parameter: %s: %s";
             showToast(String.format(fmt, sessionId, e.getMessage()));
             e.printStackTrace();
             return null;
@@ -244,18 +372,17 @@ public class MainService extends Service {
             return null;
         }
 
-        Input stdin = new Input();
-        Output stdout = new Output();
-        Output stderr = new Output();
-        Task task = new Task(session, stdin, stdout, stderr);
+        Task task = new Task(param);
         task.execute();
 
-        return new Messenger(new IncomingHandler(task)).getBinder();
+        mSessions.put(sessionId, new Session(task));
+
+        return task;
     }
 
-    private boolean removeSessionFile(String sessionId) {
+    private boolean removeSessionFile(SessionId sessionId) {
         String dir = getFilesDir().getAbsolutePath();
-        String path = String.format("%s/%s", dir, sessionId);
+        String path = String.format("%s/%s", dir, sessionId.toString());
         boolean result = new File(path).delete();
         if (!result) {
             showToast(String.format("failed to delete %s.", path));
@@ -335,32 +462,32 @@ public class MainService extends Service {
         return env;
     }
 
-    private Session readSessionFile(String sessionId) throws IOException {
-        Session session = new Session();
+    private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
+        SessionParameter param = new SessionParameter();
 
         JsonReader reader = new JsonReader(
-                new InputStreamReader(openFileInput(sessionId)));
+                new InputStreamReader(openFileInput(sessionId.toString())));
         try {
             reader.beginObject();
             while (reader.hasNext()) {
                 String name = reader.nextName();
                 if (name.equals("host")) {
-                    session.host = reader.nextString();
+                    param.host = reader.nextString();
                 }
                 else if (name.equals("port")) {
-                    session.port = reader.nextInt();
+                    param.port = reader.nextInt();
                 }
                 else if (name.equals("args")) {
-                    session.args = readArray(reader);
+                    param.args = readArray(reader);
                 }
                 else if (name.equals("env")) {
-                    session.env = readEnvironment(reader);
+                    param.env = readEnvironment(reader);
                 }
                 else if (name.equals("files")) {
-                    session.files = readArray(reader);
+                    param.files = readArray(reader);
                 }
                 else if (name.equals("links")) {
-                    session.links = readLinks(reader);
+                    param.links = readLinks(reader);
                 }
             }
             reader.endObject();
@@ -369,7 +496,7 @@ public class MainService extends Service {
             reader.close();
         }
 
-        return session;
+        return param;
     }
 }
 
