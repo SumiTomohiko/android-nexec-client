@@ -35,23 +35,23 @@ public class MainService extends Service {
     private static class Destination implements Logging.Destination {
 
         public void verbose(String message) {
-            Log.v(TAG, message);
+            Log.v(LOG_TAG, message);
         }
 
         public void debug(String message) {
-            Log.d(TAG, message);
+            Log.d(LOG_TAG, message);
         }
 
         public void info(String message) {
-            Log.i(TAG, message);
+            Log.i(LOG_TAG, message);
         }
 
         public void warn(String message) {
-            Log.w(TAG, message);
+            Log.w(LOG_TAG, message);
         }
 
         public void err(String message) {
-            Log.e(TAG, message);
+            Log.e(LOG_TAG, message);
         }
     }
 
@@ -327,7 +327,7 @@ public class MainService extends Service {
         }
     }
 
-    private static final String TAG = "nexec client";
+    private static final String LOG_TAG = "nexec client";
 
     private Sessions mSessions = new Sessions();
     private Handler mHandler = new Handler();
@@ -335,7 +335,7 @@ public class MainService extends Service {
     public void onCreate() {
         super.onCreate();
         Logging.setDestination(new Destination());
-        Log.i(TAG, "MainService was created.");
+        Log.i(LOG_TAG, "MainService was created.");
     }
 
     @Override
