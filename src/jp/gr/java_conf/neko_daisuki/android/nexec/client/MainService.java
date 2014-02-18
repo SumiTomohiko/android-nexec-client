@@ -342,6 +342,9 @@ public class MainService extends Service {
     public IBinder onBind(Intent intent) {
         String key = "SESSION_ID";
         SessionId sessionId = new SessionId(intent.getStringExtra(key));
+        String fmt = "Connected with an activity for session %s.";
+        Log.i(LOG_TAG, String.format(fmt, sessionId));
+
         Task task = getTask(sessionId);
         return task != null ? createBinder(task, sessionId) : null;
     }
