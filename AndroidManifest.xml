@@ -16,10 +16,11 @@
                 <action android:name="android.intent.action.MAIN"/>
             </intent-filter>
         </activity>
-        <service
-            android:name=".MainService"
-            android:enabled="true"
-            android:exported="true"/>
+        <service android:name=".MainService">
+            <intent-filter>
+                <action android:name="jp.gr.java_conf.neko_daisuki.android.nexec.client.INexecService"/>
+            </intent-filter>
+        </service>
     </application>
 </manifest>
 <!--

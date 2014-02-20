@@ -15,12 +15,9 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.JsonReader;
 import android.util.Log;
-import android.util.SparseArray;
 import android.widget.Toast;
 
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
@@ -55,281 +52,351 @@ public class MainService extends Service {
         }
     }
 
-    private class Task extends AsyncTask<Void, Void, Void> {
+    private class Stub extends INexecService.Stub {
 
-        private abstract class MessengerWrapper {
+        private class Task extends AsyncTask<Void, Void, Void> {
 
-            public abstract void send(Message msg);
+            private class ExceptionProcessor implements Runnable {
 
-            public void sendIntMessage(int what, int arg1) {
-                send(Message.obtain(null, what, arg1, 0));
+                private String mMessage;
+
+                public ExceptionProcessor(String message) {
+                    mMessage = message;
+                }
+
+                public void run() {
+                    showToast(mMessage);
+                }
             }
-        }
 
-        private class TrueMessenger extends MessengerWrapper {
+            private class Input extends InputStream {
 
-            private Messenger mMessenger;
+                @Override
+                public int read() throws IOException {
+                    // TODO
+                    return 0;
+                }
+            }
 
-            public TrueMessenger(Messenger messenger) {
-                mMessenger = messenger;
+            private class Stdout extends OutputStream {
+
+                @Override
+                public void write(int b) throws IOException {
+                    try {
+                        mCallback.writeStdout(b);
+                    }
+                    catch (RemoteException e) {
+                        showException("write error for stdout", e);
+                    }
+                }
+            }
+
+            private class Stderr extends OutputStream {
+
+                @Override
+                public void write(int b) throws IOException {
+                    try {
+                        mCallback.writeStderr(b);
+                    }
+                    catch (RemoteException e) {
+                        showException("write error for stderr", e);
+                    }
+                }
+            }
+
+            private SessionParameter mSessionParameter;
+
+            private INexecCallback mCallback;
+            private InputStream mStdin = new Input();
+            private OutputStream mStdout = new Stdout();
+            private OutputStream mStderr = new Stderr();
+
+            public Task(SessionParameter param) {
+                mSessionParameter = param;
+            }
+
+            public void setCallback(INexecCallback callback) {
+                mCallback = callback;
             }
 
             @Override
-            public void send(Message msg) {
+            protected void onPostExecute(Void result) {
+                super.onPostExecute(result);
+                Log.i(LOG_TAG, "The task finished.");
+            }
+
+            protected Void doInBackground(Void... params) {
+                run();
+                return null;
+            }
+
+            private void run() {
+                Permissions perm = new Permissions();
+                for (String path: mSessionParameter.files) {
+                    perm.allowPath(path);
+                }
+
+                NexecClient nexec = new NexecClient();
                 try {
-                    mMessenger.send(msg);
+                    nexec.run(
+                            mSessionParameter.host, mSessionParameter.port,
+                            mSessionParameter.args, mStdin, mStdout, mStderr,
+                            mSessionParameter.env, perm,
+                            mSessionParameter.links);
                 }
-                catch (RemoteException e) {
-                    showException("Cannot send message", e);
+                catch (ProtocolException e) {
+                    showException("protocol error", e);
+                }
+                catch (InterruptedException e) {
+                    showException("interrupted", e);
+                }
+                catch (IOException e) {
+                    showException("I/O error", e);
                 }
             }
-        }
 
-        private class FakeMessenger extends MessengerWrapper {
+            private void showException(String msg, Exception e) {
+                e.printStackTrace();
 
-            @Override
-            public void send(Message msg) {
+                String s = String.format("%s: %s", msg, e.getMessage());
+                mHandler.post(new ExceptionProcessor(s));
             }
         }
 
-        private class ExceptionProcessor implements Runnable {
+        private class Session {
 
-            private String mMessage;
+            private Task mTask;
 
-            public ExceptionProcessor(String message) {
-                mMessage = message;
+            public Session(Task task) {
+                mTask = task;
             }
 
-            public void run() {
-                showToast(mMessage);
-            }
-        }
-
-        private class Input extends InputStream {
-
-            @Override
-            public int read() throws IOException {
-                // TODO
-                return 0;
+            public Task getTask() {
+                return mTask;
             }
         }
 
-        private class Stdout extends OutputStream {
+        private class Sessions {
 
-            @Override
-            public void write(int b) throws IOException {
-                mMessenger.sendIntMessage(MessageWhat.MSG_STDOUT, b);
+            private Map<SessionId, Session> mMap;
+
+            public Sessions() {
+                mMap = new ConcurrentHashMap<SessionId, Session>();
+            }
+
+            public void put(SessionId sessionId, Session session) {
+                mMap.put(sessionId, session);
+            }
+
+            public Session get(SessionId sessionId) {
+                return mMap.get(sessionId);
+            }
+
+            public void remove(SessionId sessionId) {
+                mMap.remove(sessionId);
             }
         }
 
-        private class Stderr extends OutputStream {
+        private class SessionParameter {
 
-            @Override
-            public void write(int b) throws IOException {
-                mMessenger.sendIntMessage(MessageWhat.MSG_STDERR, b);
-            }
+            public String host = "";
+            public int port;
+            public String[] args = new String[0];
+            public Environment env;
+            public String[] files = new String[0];
+            public Links links;
         }
 
-        private final MessengerWrapper FAKE_MESSENGER = new FakeMessenger();
+        private Sessions mSessions = new Sessions();
 
-        private SessionParameter mSessionParameter;
-
-        private MessengerWrapper mMessenger = FAKE_MESSENGER;
-        private InputStream mStdin = new Input();
-        private OutputStream mStdout = new Stdout();
-        private OutputStream mStderr = new Stderr();
-
-        public Task(SessionParameter param) {
-            mSessionParameter = param;
+        @Override
+        public void execute(SessionId sessionId, INexecCallback callback) throws RemoteException {
+            Log.i(LOG_TAG, String.format("execute: %s", sessionId));
+            startTask(sessionId, callback);
         }
 
-        public void setMessengerToClient(Messenger messenger) {
-            mMessenger = messenger != null
-                    ? new TrueMessenger(messenger)
-                    : FAKE_MESSENGER;
-        }
-
-        protected Void doInBackground(Void... params) {
-            run();
-            return null;
-        }
-
-        private void run() {
-            Permissions perm = new Permissions();
-            for (String path: mSessionParameter.files) {
-                perm.allowPath(path);
+        @Override
+        public void connect(SessionId sessionId, INexecCallback callback)
+                throws RemoteException {
+            Log.i(LOG_TAG, String.format("connect: %s", sessionId));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
             }
 
-            NexecClient nexec = new NexecClient();
+            session.getTask().setCallback(callback);
+        }
+
+        @Override
+        public void disconnect(SessionId sessionId) throws RemoteException {
+            Log.i(LOG_TAG, String.format("disconnected: %s", sessionId));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
+            }
+
+            session.getTask().setCallback(null);
+        }
+
+        @Override
+        public void quit(SessionId sessionId) throws RemoteException {
+            Log.i(LOG_TAG, String.format("quit: %s", sessionId));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
+            }
+
+            session.getTask().cancel(true);
+            mSessions.remove(sessionId);
+        }
+
+        @Override
+        public void writeStdin(SessionId sessionId, int b) throws RemoteException {
+            // TODO Auto-generated method stub
+        }
+
+        private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
+            SessionParameter param = new SessionParameter();
+
+            JsonReader reader = new JsonReader(
+                    new InputStreamReader(openFileInput(sessionId.toString())));
             try {
-                int exitCode = nexec.run(
-                        mSessionParameter.host, mSessionParameter.port,
-                        mSessionParameter.args, mStdin, mStdout, mStderr,
-                        mSessionParameter.env, perm, mSessionParameter.links);
-                mMessenger.sendIntMessage(MessageWhat.MSG_EXIT, exitCode);
+                reader.beginObject();
+                while (reader.hasNext()) {
+                    String name = reader.nextName();
+                    if (name.equals("host")) {
+                        param.host = reader.nextString();
+                    }
+                    else if (name.equals("port")) {
+                        param.port = reader.nextInt();
+                    }
+                    else if (name.equals("args")) {
+                        param.args = readArray(reader);
+                    }
+                    else if (name.equals("env")) {
+                        param.env = readEnvironment(reader);
+                    }
+                    else if (name.equals("files")) {
+                        param.files = readArray(reader);
+                    }
+                    else if (name.equals("links")) {
+                        param.links = readLinks(reader);
+                    }
+                }
+                reader.endObject();
             }
-            catch (ProtocolException e) {
-                showException("protocol error", e);
+            finally {
+                reader.close();
             }
-            catch (InterruptedException e) {
-                showException("interrupted", e);
+
+            return param;
+        }
+
+        private String[] readArray(JsonReader reader) throws IOException {
+            List<String> list = new LinkedList<String>();
+
+            reader.beginArray();
+            while (reader.hasNext()) {
+                list.add(reader.nextString());
+            }
+            reader.endArray();
+
+            return list.toArray(new String[0]);
+        }
+
+        private Environment readEnvironment(JsonReader reader) throws IOException {
+            Environment env = new Environment();
+
+            reader.beginArray();
+            while (reader.hasNext()) {
+                String key = null;
+                String value = null;
+
+                reader.beginObject();
+                while (reader.hasNext()) {
+                    String name = reader.nextName();
+                    if (name.equals("name")) {
+                        key = reader.nextString();
+                    }
+                    else if (name.equals("value")) {
+                        value = reader.nextString();
+                    }
+                }
+                reader.endObject();
+
+                if ((key != null) && (value != null)) {
+                    env.put(key, value);
+                }
+            }
+            reader.endArray();
+
+            return env;
+        }
+
+        private Links readLinks(JsonReader reader) throws IOException {
+            Links links = new Links();
+
+            reader.beginArray();
+            while (reader.hasNext()) {
+                String dest = null;
+                String src = null;
+
+                reader.beginObject();
+                while (reader.hasNext()) {
+                    String name = reader.nextName();
+                    if (name.equals("dest")) {
+                        dest = reader.nextString();
+                    }
+                    else if (name.equals("src")) {
+                        src = reader.nextString();
+                    }
+                }
+                reader.endObject();
+
+                links.put(dest, src);
+            }
+            reader.endArray();
+
+            return links;
+        }
+
+        private void startTask(SessionId sessionId, INexecCallback callback) {
+            SessionParameter param;
+            try {
+                param = readSessionParameter(sessionId);
             }
             catch (IOException e) {
-                showException("I/O error", e);
+                String fmt = "failed to read session parameter: %s: %s";
+                showToast(String.format(fmt, sessionId, e.getMessage()));
+                e.printStackTrace();
+                return;
             }
-        }
-
-        private void showException(String msg, Exception e) {
-            e.printStackTrace();
-
-            String s = String.format("%s: %s", msg, e.getMessage());
-            mHandler.post(new ExceptionProcessor(s));
-        }
-    }
-
-    private static class IncomingHandler extends Handler {
-
-        private interface MessageHandler {
-
-            public void handle(Message msg);
-        }
-
-        private class ConnectHandler implements MessageHandler {
-
-            public void handle(Message msg) {
-                mTask.setMessengerToClient(msg.replyTo);
+            if (!removeSessionFile(sessionId)) {
+                return;
             }
+
+            Task task = new Task(param);
+            task.setCallback(callback);
+            task.execute();
+            String fmt = "A new task started for session %s.";
+            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+
+            mSessions.put(sessionId, new Session(task));
         }
 
-        private class DisconnectHandler implements MessageHandler {
-
-            @Override
-            public void handle(Message msg) {
-                mTask.setMessengerToClient(null);
+        private boolean removeSessionFile(SessionId sessionId) {
+            String dir = getFilesDir().getAbsolutePath();
+            String path = String.format("%s/%s", dir, sessionId.toString());
+            boolean result = new File(path).delete();
+            if (!result) {
+                showToast(String.format("failed to delete %s.", path));
             }
-        }
-
-        private class QuitHandler implements MessageHandler {
-
-            @Override
-            public void handle(Message msg) {
-                mTask.cancel(true);
-                mTask.setMessengerToClient(null);
-                mQuitCallback.quit();
-            }
-        }
-
-        // documents
-        private Task mTask;
-        private QuitCallback mQuitCallback;
-
-        // helpers
-        private SparseArray<MessageHandler> mHandlers;
-
-        public IncomingHandler(Task task, QuitCallback quitCallback) {
-            mTask = task;
-            mQuitCallback = quitCallback;
-
-            mHandlers = new SparseArray<MessageHandler>();
-            mHandlers.put(MessageWhat.MSG_CONNECT, new ConnectHandler());
-            mHandlers.put(MessageWhat.MSG_DISCONNECT, new DisconnectHandler());
-            mHandlers.put(MessageWhat.MSG_QUIT, new QuitHandler());
-        }
-
-        public void handleMessage(Message msg) {
-            mHandlers.get(msg.what).handle(msg);
+            return result;
         }
     }
 
-    private static class SessionParameter {
+    private static final String LOG_TAG = "nexec client service";
 
-        public String host = "";
-        public int port;
-        public String[] args = new String[0];
-        public Environment env;
-        public String[] files = new String[0];
-        public Links links;
-    }
-
-    private static class Session {
-
-        private Task mTask;
-
-        public Session(Task task) {
-            mTask = task;
-        }
-
-        public Task getTask() {
-            return mTask;
-        }
-    }
-
-    private static class SessionId {
-
-        private String mId;
-
-        public SessionId(String id) {
-            mId = id;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            try {
-                return ((SessionId)o).toString().equals(mId);
-            }
-            catch (ClassCastException e) {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return mId.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return mId;
-        }
-    }
-
-    private static class Sessions {
-
-        private Map<SessionId, Session> mMap;
-
-        public Sessions() {
-            mMap = new ConcurrentHashMap<SessionId, Session>();
-        }
-
-        public void put(SessionId sessionId, Session session) {
-            mMap.put(sessionId, session);
-        }
-
-        public Session get(SessionId sessionId) {
-            return mMap.get(sessionId);
-        }
-
-        public void remove(SessionId sessionId) {
-            mMap.remove(sessionId);
-        }
-    }
-
-    private class QuitCallback {
-
-        private SessionId mSessionId;
-
-        public QuitCallback(SessionId sessionId) {
-            mSessionId = sessionId;
-        }
-
-        public void quit() {
-            mSessions.remove(mSessionId);
-        }
-    }
-
-    private static final String LOG_TAG = "nexec client";
-
-    private Sessions mSessions = new Sessions();
     private Handler mHandler = new Handler();
 
     public void onCreate() {
@@ -340,166 +407,11 @@ public class MainService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        String key = "SESSION_ID";
-        SessionId sessionId = new SessionId(intent.getStringExtra(key));
-        String fmt = "Connected with an activity for session %s.";
-        Log.i(LOG_TAG, String.format(fmt, sessionId));
-
-        Task task = getTask(sessionId);
-        return task != null ? createBinder(task, sessionId) : null;
-    }
-
-    private IBinder createBinder(Task task, SessionId sessionId) {
-        QuitCallback quitCallback = new QuitCallback(sessionId);
-        Handler handler = new IncomingHandler(task, quitCallback);
-        return new Messenger(handler).getBinder();
-    }
-
-    private Task getTask(SessionId sessionId) {
-        Session session = mSessions.get(sessionId);
-        return session != null ? session.getTask() : createTask(sessionId);
-    }
-
-    private Task createTask(SessionId sessionId) {
-        SessionParameter param;
-        try {
-            param = readSessionParameter(sessionId);
-        }
-        catch (IOException e) {
-            String fmt = "failed to read session parameter: %s: %s";
-            showToast(String.format(fmt, sessionId, e.getMessage()));
-            e.printStackTrace();
-            return null;
-        }
-        if (!removeSessionFile(sessionId)) {
-            return null;
-        }
-
-        Task task = new Task(param);
-        task.execute();
-
-        mSessions.put(sessionId, new Session(task));
-
-        return task;
-    }
-
-    private boolean removeSessionFile(SessionId sessionId) {
-        String dir = getFilesDir().getAbsolutePath();
-        String path = String.format("%s/%s", dir, sessionId.toString());
-        boolean result = new File(path).delete();
-        if (!result) {
-            showToast(String.format("failed to delete %s.", path));
-        }
-        return result;
+        return new Stub();
     }
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-    }
-
-    private Links readLinks(JsonReader reader) throws IOException {
-        Links links = new Links();
-
-        reader.beginArray();
-        while (reader.hasNext()) {
-            String dest = null;
-            String src = null;
-
-            reader.beginObject();
-            while (reader.hasNext()) {
-                String name = reader.nextName();
-                if (name.equals("dest")) {
-                    dest = reader.nextString();
-                }
-                else if (name.equals("src")) {
-                    src = reader.nextString();
-                }
-            }
-            reader.endObject();
-
-            links.put(dest, src);
-        }
-        reader.endArray();
-
-        return links;
-    }
-
-    private String[] readArray(JsonReader reader) throws IOException {
-        List<String> list = new LinkedList<String>();
-
-        reader.beginArray();
-        while (reader.hasNext()) {
-            list.add(reader.nextString());
-        }
-        reader.endArray();
-
-        return list.toArray(new String[0]);
-    }
-
-    private Environment readEnvironment(JsonReader reader) throws IOException {
-        Environment env = new Environment();
-
-        reader.beginArray();
-        while (reader.hasNext()) {
-            String key = null;
-            String value = null;
-
-            reader.beginObject();
-            while (reader.hasNext()) {
-                String name = reader.nextName();
-                if (name.equals("name")) {
-                    key = reader.nextString();
-                }
-                else if (name.equals("value")) {
-                    value = reader.nextString();
-                }
-            }
-            reader.endObject();
-
-            if ((key != null) && (value != null)) {
-                env.put(key, value);
-            }
-        }
-        reader.endArray();
-
-        return env;
-    }
-
-    private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
-        SessionParameter param = new SessionParameter();
-
-        JsonReader reader = new JsonReader(
-                new InputStreamReader(openFileInput(sessionId.toString())));
-        try {
-            reader.beginObject();
-            while (reader.hasNext()) {
-                String name = reader.nextName();
-                if (name.equals("host")) {
-                    param.host = reader.nextString();
-                }
-                else if (name.equals("port")) {
-                    param.port = reader.nextInt();
-                }
-                else if (name.equals("args")) {
-                    param.args = readArray(reader);
-                }
-                else if (name.equals("env")) {
-                    param.env = readEnvironment(reader);
-                }
-                else if (name.equals("files")) {
-                    param.files = readArray(reader);
-                }
-                else if (name.equals("links")) {
-                    param.links = readLinks(reader);
-                }
-            }
-            reader.endObject();
-        }
-        finally {
-            reader.close();
-        }
-
-        return param;
     }
 }
 
