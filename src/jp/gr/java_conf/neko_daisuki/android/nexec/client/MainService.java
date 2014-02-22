@@ -138,11 +138,12 @@ public class MainService extends Service {
 
                 NexecClient nexec = new NexecClient();
                 try {
-                    nexec.run(
+                    int exitCode = nexec.run(
                             mSessionParameter.host, mSessionParameter.port,
                             mSessionParameter.args, mStdin, mStdout, mStderr,
                             mSessionParameter.env, perm,
                             mSessionParameter.links);
+                    mCallback.exit(exitCode);
                 }
                 catch (ProtocolException e) {
                     showException("protocol error", e);
@@ -152,6 +153,9 @@ public class MainService extends Service {
                 }
                 catch (IOException e) {
                     showException("I/O error", e);
+                }
+                catch (RemoteException e) {
+                    showException("socket error", e);
                 }
             }
 
