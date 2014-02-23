@@ -162,7 +162,9 @@ public class MainService extends Service {
             private void showException(String msg, Exception e) {
                 e.printStackTrace();
 
-                String s = String.format("%s: %s", msg, e.getMessage());
+                String fmt = "nexec service: %s: %s: %s";
+                String name = e.getClass().getName();
+                String s = String.format(fmt, msg, name, e.getMessage());
                 mHandler.post(new ExceptionProcessor(s));
             }
         }
