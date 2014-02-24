@@ -78,39 +78,54 @@ public class MainService extends Service {
                 }
             }
 
-            private class Stdout extends OutputStream {
+            private abstract class Output extends OutputStream {
+
+                private String mName;
+
+                public Output(String name) {
+                    mName = name;
+                }
 
                 @Override
                 public void write(byte[] buffer) throws IOException {
                     try {
-                        mCallback.writeStdout(buffer);
+                        callback(buffer);
                     }
                     catch (RemoteException e) {
-                        showException("write error for stdout", e);
+                        String fmt = "write error for %s";
+                        showException(String.format(fmt, mName), e);
                     }
                 }
 
                 @Override
                 public void write(int b) throws IOException {
                     write(new byte[] { (byte)b });
+                }
+
+                protected abstract void callback(byte[] buffer) throws RemoteException;
+            }
+
+            private class Stdout extends Output {
+
+                public Stdout() {
+                    super("stdout");
+                }
+
+                @Override
+                protected void callback(byte[] buffer) throws RemoteException {
+                    mCallback.writeStdout(buffer);
                 }
             }
 
-            private class Stderr extends OutputStream {
+            private class Stderr extends Output {
 
-                @Override
-                public void write(byte[] buffer) throws IOException {
-                    try {
-                        mCallback.writeStderr(buffer);
-                    }
-                    catch (RemoteException e) {
-                        showException("write error for stderr", e);
-                    }
+                public Stderr() {
+                    super("stderr");
                 }
 
                 @Override
-                public void write(int b) throws IOException {
-                    write(new byte[] { (byte)b });
+                protected void callback(byte[] buffer) throws RemoteException {
+                    mCallback.writeStderr(buffer);
                 }
             }
 
