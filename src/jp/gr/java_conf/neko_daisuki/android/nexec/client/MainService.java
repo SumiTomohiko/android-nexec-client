@@ -81,26 +81,36 @@ public class MainService extends Service {
             private class Stdout extends OutputStream {
 
                 @Override
-                public void write(int b) throws IOException {
+                public void write(byte[] buffer) throws IOException {
                     try {
-                        mCallback.writeStdout(b);
+                        mCallback.writeStdout(buffer);
                     }
                     catch (RemoteException e) {
                         showException("write error for stdout", e);
                     }
+                }
+
+                @Override
+                public void write(int b) throws IOException {
+                    write(new byte[] { (byte)b });
                 }
             }
 
             private class Stderr extends OutputStream {
 
                 @Override
-                public void write(int b) throws IOException {
+                public void write(byte[] buffer) throws IOException {
                     try {
-                        mCallback.writeStderr(b);
+                        mCallback.writeStderr(buffer);
                     }
                     catch (RemoteException e) {
                         showException("write error for stderr", e);
                     }
+                }
+
+                @Override
+                public void write(int b) throws IOException {
+                    write(new byte[] { (byte)b });
                 }
             }
 
