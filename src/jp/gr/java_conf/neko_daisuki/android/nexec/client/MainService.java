@@ -93,7 +93,7 @@ public class MainService extends Service {
                     }
                     catch (RemoteException e) {
                         String fmt = "write error for %s";
-                        showException(String.format(fmt, mName), e);
+                        handleException(String.format(fmt, mName), e);
                     }
                 }
 
@@ -129,9 +129,55 @@ public class MainService extends Service {
                 }
             }
 
+            private abstract class Callback {
+
+                public abstract void writeStdout(byte[] buf) throws RemoteException;
+                public abstract void writeStderr(byte[] buf) throws RemoteException;
+                public abstract void exit(int status) throws RemoteException;
+            }
+
+            private class NopCallback extends Callback {
+
+                @Override
+                public void writeStdout(byte[] buf)  throws RemoteException{
+                }
+
+                @Override
+                public void writeStderr(byte[] buf)  throws RemoteException{
+                }
+
+                @Override
+                public void exit(int status)  throws RemoteException{
+                }
+            }
+
+            private class TrueCallback extends Callback {
+
+                private INexecCallback mCallback;
+
+                public TrueCallback(INexecCallback callback) {
+                    mCallback = callback;
+                }
+
+                @Override
+                public void writeStdout(byte[] buf) throws RemoteException {
+                    mCallback.writeStdout(buf);
+                }
+
+                @Override
+                public void writeStderr(byte[] buf) throws RemoteException {
+                    mCallback.writeStderr(buf);
+                }
+
+                @Override
+                public void exit(int status) throws RemoteException {
+                    mCallback.exit(status);
+                }
+            }
+
             private SessionParameter mSessionParameter;
 
-            private INexecCallback mCallback;
+            private Callback mCallback;
             private InputStream mStdin = new Input();
             private OutputStream mStdout = new Stdout();
             private OutputStream mStderr = new Stderr();
@@ -141,7 +187,8 @@ public class MainService extends Service {
             }
 
             public void setCallback(INexecCallback callback) {
-                mCallback = callback;
+                mCallback = callback != null ? new TrueCallback(callback)
+                                             : new NopCallback();
             }
 
             @Override
@@ -171,20 +218,21 @@ public class MainService extends Service {
                     mCallback.exit(exitCode);
                 }
                 catch (ProtocolException e) {
-                    showException("protocol error", e);
+                    handleException("protocol error", e);
                 }
                 catch (InterruptedException e) {
-                    showException("interrupted", e);
+                    handleException("interrupted", e);
                 }
                 catch (IOException e) {
-                    showException("I/O error", e);
+                    handleException("I/O error", e);
                 }
                 catch (RemoteException e) {
-                    showException("socket error", e);
+                    handleException("socket error", e);
                 }
             }
 
-            private void showException(String msg, Exception e) {
+            private void handleException(String msg, Exception e) {
+                setCallback(null);
                 e.printStackTrace();
 
                 String fmt = "nexec service: %s: %s: %s";
