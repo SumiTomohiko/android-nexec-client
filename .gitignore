@@ -1,6 +1,7 @@
 .classpath
 .settings
 /ic_launcher-web.png
+au.com.darkside.XServer
 bin
 doc/command_page-thumb.png
 doc/environment_page-thumb.png
