@@ -6,6 +6,8 @@ package au.com.darkside.XServer;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 /**
@@ -31,9 +33,12 @@ public class InputOutput {
 	public InputOutput (
 		Socket		socket
 	) throws IOException {
-		_inStream = new BufferedInputStream (socket.getInputStream (), 16384);
-		_outStream = new BufferedOutputStream (socket.getOutputStream (),
-																	16384);
+	    this(socket.getInputStream(), socket.getOutputStream());
+	}
+
+	public InputOutput(InputStream in, OutputStream out) {
+		_inStream = new BufferedInputStream(in, 16384);
+		_outStream = new BufferedOutputStream(out, 16384);
 	}
 
 	/**

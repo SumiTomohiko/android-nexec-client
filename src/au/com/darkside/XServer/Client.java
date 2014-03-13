@@ -4,6 +4,8 @@
 package au.com.darkside.XServer;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Vector;
 
@@ -15,12 +17,40 @@ import au.com.darkside.XServer.Xext.Extensions;
  * This class handles communications with a client.
  */
 public class Client extends Thread {
+
+    private interface CloseSocketProc {
+
+        public static class Nop implements CloseSocketProc {
+
+            public void close() throws IOException {
+            }
+        }
+
+        public static final CloseSocketProc NOP = new Nop();
+
+        public void close() throws IOException;
+    }
+
+    private static class TrueCloseSocketProc implements CloseSocketProc {
+
+        private Socket mSocket;
+
+        public TrueCloseSocketProc(Socket socket) {
+            mSocket = socket;
+        }
+
+        @Override
+        public void close() throws IOException {
+            mSocket.close();
+        }
+    }
+
 	public static final int		Destroy = 0;
 	public static final int		RetainPermanent = 1;
 	public static final int		RetainTemporary = 2;
 
 	private final XServer			_xServer;
-	private final Socket			_socket;
+	private final CloseSocketProc mCloseSocketProc;
 	private final InputOutput		_inputOutput;
 	private final int				_resourceIdBase;
 	private final int				_resourceIdMask;
@@ -45,9 +75,22 @@ public class Client extends Thread {
 		int				resourceIdBase,
 		int				resourceIdMask
 	) throws IOException {
+	    this(xserver, socket, new InputOutput(socket), resourceIdBase,
+	         resourceIdMask);
+	}
+
+	public Client(XServer xserver, InputStream in, OutputStream out,
+	              int resourceIdBase, int resourceIdMask) throws IOException {
+	    this(xserver, null, new InputOutput(in, out), resourceIdBase,
+	         resourceIdMask);
+	}
+
+	public Client(XServer xserver, Socket socket, InputOutput conn,
+	              int resourceIdBase, int resourceIdMask) throws IOException {
 		_xServer = xserver;
-		_socket = socket;
-		_inputOutput = new InputOutput (socket);
+		mCloseSocketProc = socket != null ? new TrueCloseSocketProc(socket)
+		                                  : CloseSocketProc.NOP;
+		_inputOutput = conn;
 		_resourceIdBase = resourceIdBase;
 		_resourceIdMask = resourceIdMask;
 		_resources = new Vector<Resource>();
@@ -153,7 +196,7 @@ public class Client extends Thread {
 
 		try {
 			_inputOutput.close ();
-			_socket.close ();
+			mCloseSocketProc.close();
 		} catch (IOException e) {
 		}
 

@@ -4,6 +4,8 @@
 package au.com.darkside.XServer;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -170,6 +172,19 @@ public class XServer {
 		resetScreenSaver ();
 
 		return true;
+	}
+
+	public synchronized void start(InputStream in, OutputStream out) {
+	    Client c;
+	    try {
+	        c = new Client(this, in, out, _clientIdBase, _clientIdStep - 1);
+	        _clients.add (c);
+	        c.start ();
+	        _clientIdBase += _clientIdStep;
+	    }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
 	}
 
 	/**
