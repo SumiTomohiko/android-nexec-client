@@ -73,7 +73,7 @@ public class MainService extends Service {
 
                 @Override
                 public int read() throws IOException {
-                    // TODO
+                    // TODO: Write stdin.
                     return 0;
                 }
             }
@@ -331,7 +331,7 @@ public class MainService extends Service {
 
         @Override
         public void writeStdin(SessionId sessionId, int b) throws RemoteException {
-            // TODO Auto-generated method stub
+            // TODO: Write stdin.
         }
 
         private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
