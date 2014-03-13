@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +22,17 @@ import android.util.JsonReader;
 import android.util.Log;
 import android.widget.Toast;
 
+import au.com.darkside.XServer.XScreenListener;
+import au.com.darkside.XServer.XServer;
+
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
+import jp.gr.java_conf.neko_daisuki.fsyscall.SocketAddress;
+import jp.gr.java_conf.neko_daisuki.fsyscall.UnixDomainAddress;
+import jp.gr.java_conf.neko_daisuki.fsyscall.Unix;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Links;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
+import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Slave;
+import jp.gr.java_conf.neko_daisuki.fsyscall.slave.SocketCore;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient.Environment;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
@@ -134,6 +144,8 @@ public class MainService extends Service {
                 public abstract void writeStdout(byte[] buf) throws RemoteException;
                 public abstract void writeStderr(byte[] buf) throws RemoteException;
                 public abstract void exit(int status) throws RemoteException;
+                public abstract void xInvalidate(int left, int top, int right,
+                                                 int bottom) throws RemoteException;
             }
 
             private class NopCallback extends Callback {
@@ -148,6 +160,11 @@ public class MainService extends Service {
 
                 @Override
                 public void exit(int status)  throws RemoteException{
+                }
+
+                @Override
+                public void xInvalidate(int left, int top, int right,
+                                           int bottom) throws RemoteException {
                 }
             }
 
@@ -172,6 +189,125 @@ public class MainService extends Service {
                 @Override
                 public void exit(int status) throws RemoteException {
                     mCallback.exit(status);
+                }
+
+                @Override
+                public void xInvalidate(int left, int top, int right,
+                                           int bottom) throws RemoteException {
+                    mCallback.xInvalidate(left, top, right, bottom);
+                }
+            }
+
+            private class SlaveListener implements Slave.Listener {
+
+                private class Pipe {
+
+                    private InputStream mInputStream;
+                    private OutputStream mOutputStream;
+
+                    public Pipe() throws IOException {
+                        PipedInputStream in = new PipedInputStream();
+                        PipedOutputStream out = new PipedOutputStream();
+                        in.connect(out);
+                        mInputStream = in;
+                        mOutputStream = out;
+                    }
+
+                    public InputStream getInputStream() {
+                        return mInputStream;
+                    }
+
+                    public OutputStream getOutputStream() {
+                        return mOutputStream;
+                    }
+
+                    public void close() throws IOException {
+                        mInputStream.close();
+                        mOutputStream.close();
+                    }
+                }
+
+                private class Socket implements SocketCore {
+
+                    private Pipe mServerToClientPipe;
+                    private Pipe mClientToServerPipe;
+
+                    public Socket(Pipe serverToClientPipe,
+                                  Pipe clientToServerPipe) {
+                        mServerToClientPipe = serverToClientPipe;
+                        mClientToServerPipe = clientToServerPipe;
+                    }
+
+                    @Override
+                    public void close() throws IOException {
+                        mServerToClientPipe.close();
+                        mClientToServerPipe.close();
+                    }
+
+                    @Override
+                    public InputStream getInputStream() {
+                        return mServerToClientPipe.getInputStream();
+                    }
+
+                    @Override
+                    public OutputStream getOutputStream() {
+                        return mClientToServerPipe.getOutputStream();
+                    }
+                }
+
+                private class ScreenListener implements XScreenListener {
+
+                    @Override
+                    public void onPostInvalidate(int left, int top, int right,
+                                                 int bottom) {
+                        try {
+                            mCallback.xInvalidate(left, top, right, bottom);
+                        }
+                        catch (RemoteException e) {
+                            handleException("postInvalidate", e);
+                        }
+                    }
+                }
+
+                private int mXWidth;
+                private int mXHeight;
+
+                public SlaveListener(int xWidth, int xHeight) {
+                    mXWidth = xWidth;
+                    mXHeight = xHeight;
+                }
+
+                @Override
+                public SocketCore onConnect(int domain, int type, int protocol,
+                                            SocketAddress sockaddr) {
+                    if ((domain != Unix.Constants.PF_LOCAL) || !(sockaddr instanceof UnixDomainAddress)) {
+                        return null;
+                    }
+
+                    Pipe serverToClientPipe;
+                    Pipe clientToServerPipe;
+                    try {
+                        serverToClientPipe = new Pipe();
+                        clientToServerPipe = new Pipe();
+                    }
+                    catch (IOException e) {
+                        handleException("creating pipe", e);
+                        return null;
+                    }
+
+                    startX(clientToServerPipe, serverToClientPipe);
+
+                    return new Socket(serverToClientPipe, clientToServerPipe);
+                }
+
+                private void startX(Pipe clientToServerPipe,
+                                    Pipe serverToClientPipe) {
+                    ScreenListener listener = new ScreenListener();
+                    XServer xServer = new XServer(MainService.this, mXWidth,
+                                                  mXHeight, listener);
+                    InputStream in = clientToServerPipe.getInputStream();
+                    OutputStream out = serverToClientPipe.getOutputStream();
+                    xServer.start(in, out);
                 }
             }
 
@@ -209,12 +345,15 @@ public class MainService extends Service {
                 }
 
                 NexecClient nexec = new NexecClient();
+                int xWidth = mSessionParameter.xWidth;
+                int xHeight = mSessionParameter.xHeight;
+                SlaveListener listener = new SlaveListener(xWidth, xHeight);
                 try {
                     int exitCode = nexec.run(
                             mSessionParameter.host, mSessionParameter.port,
                             mSessionParameter.args, mStdin, mStdout, mStderr,
                             mSessionParameter.env, perm,
-                            mSessionParameter.links);
+                            mSessionParameter.links, listener);
                     mCallback.exit(exitCode);
                 }
                 catch (ProtocolException e) {
@@ -284,6 +423,8 @@ public class MainService extends Service {
             public Environment env;
             public String[] files = new String[0];
             public Links links;
+            public int xWidth;
+            public int xHeight;
         }
 
         private Sessions mSessions = new Sessions();
@@ -360,6 +501,12 @@ public class MainService extends Service {
                     }
                     else if (name.equals("links")) {
                         param.links = readLinks(reader);
+                    }
+                    else if (name.equals("x_width")) {
+                        param.xWidth = reader.nextInt();
+                    }
+                    else if (name.equals("x_height")) {
+                        param.xHeight = reader.nextInt();
                     }
                 }
                 reader.endObject();

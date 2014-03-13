@@ -5,4 +5,6 @@ interface INexecCallback {
     oneway void exit(int status);
     oneway void writeStdout(in byte[] buf);
     oneway void writeStderr(in byte[] buf);
+
+    oneway void xInvalidate(int left, int top, int right, int bottom);
 }

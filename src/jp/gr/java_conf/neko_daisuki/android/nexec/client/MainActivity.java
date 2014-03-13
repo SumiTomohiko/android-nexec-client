@@ -272,14 +272,20 @@ public class MainActivity extends Activity {
         private Environment[] mEnv;
         private String[] mFiles;
         private Link[] mLinks;
+        private int mXWidth;
+        private int mXHeight;
 
-        public OkButtonOnClickListener(String host, int port, String[] args, Environment[] env, String[] files, Link[] links) {
+        public OkButtonOnClickListener(String host, int port, String[] args,
+                                       Environment[] env, String[] files,
+                                       Link[] links, int xWidth, int xHeight) {
             mHost = host;
             mPort = port;
             mArgs = args;
             mEnv = env;
             mFiles = files;
             mLinks = links;
+            mXWidth = xWidth;
+            mXHeight = xHeight;
         }
 
         public void onClick(View view) {
@@ -382,6 +388,8 @@ public class MainActivity extends Activity {
                 writeEnvironmentArray(writer, "env", mEnv);
                 writeStringArray(writer, "files", mFiles);
                 writeLinkArray(writer, "links", mLinks);
+                writer.name("x_width").value(mXWidth);
+                writer.name("x_height").value(mXHeight);
                 writer.endObject();
             }
             finally {
@@ -441,6 +449,8 @@ public class MainActivity extends Activity {
         Environment[] env = getEnvironments(intent);
         String[] files = intent.getStringArrayExtra("FILES");
         Link[] links = parseLinks(intent.getStringArrayExtra("LINKS"));
+        int xWidth = intent.getIntExtra("X_WIDTH", 0);
+        int xHeight = intent.getIntExtra("X_HEIGHT", 0);
 
         ViewPager pager = (ViewPager)findViewById(R.id.view_pager);
         pager.setAdapter(
@@ -449,7 +459,7 @@ public class MainActivity extends Activity {
         Button okButton = (Button)findViewById(R.id.ok_button);
         okButton.setOnClickListener(
                 new OkButtonOnClickListener(
-                        host, port, args, env, files, links));
+                        host, port, args, env, files, links, xWidth, xHeight));
         Button cancelButton = (Button)findViewById(R.id.cancel_button);
         cancelButton.setOnClickListener(new CancelButtonOnClickListener());
     }
