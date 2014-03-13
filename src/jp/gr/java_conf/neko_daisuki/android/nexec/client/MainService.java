@@ -445,9 +445,9 @@ public class MainService extends Service {
                 param = readSessionParameter(sessionId);
             }
             catch (IOException e) {
+                e.printStackTrace();
                 String fmt = "failed to read session parameter: %s: %s";
                 showToast(String.format(fmt, sessionId, e.getMessage()));
-                e.printStackTrace();
                 return;
             }
             if (!removeSessionFile(sessionId)) {
