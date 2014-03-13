@@ -13,7 +13,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.View;
+//import android.view.View;
 
 /**
  * @author Matthew Kwan
@@ -21,7 +21,7 @@ import android.view.View;
  * This class implements an X Windows screen.
  * It also implements the screen's root window.
  */
-public class ScreenView extends View {
+public class ScreenView {
 	private final XServer			_xServer;
 	private final int				_rootId;
 	private Window					_rootWindow = null;
@@ -63,6 +63,10 @@ public class ScreenView extends View {
 	private byte		_focusRevertTo = 0;	// 0=None, 1=Root, 2=Parent.
 	private int			_focusLastChangeTime = 0;
 
+	private int mWidth;
+	private int mHeight;
+	private XScreenListener mListener;
+
 	/**
 	 * Constructor.
 	 *
@@ -75,18 +79,25 @@ public class ScreenView extends View {
 		Context		c,
 		XServer		xServer,
 		int			rootId,
-		float		pixelsPerMillimeter
+		float		pixelsPerMillimeter,
+		int width,
+		int height,
+		XScreenListener listener
 	) {
-		super (c);
+		//super (c);
 
-		setFocusable (true);
-		setFocusableInTouchMode (true);
+		//setFocusable (true);
+		//setFocusableInTouchMode (true);
 
 		_xServer = xServer;
 		_rootId = rootId;
 		_installedColormaps = new Vector<Colormap>();
 		_pixelsPerMillimeter = pixelsPerMillimeter;
 		_paint = new Paint ();
+
+		mWidth = width;
+		mHeight = height;
+		mListener = listener;
 	}
 
 	/**
@@ -96,7 +107,7 @@ public class ScreenView extends View {
 	public ScreenView (
 		Context		c
 	) {
-		super (c);
+		//super (c);
 
 		_xServer = null;
 		_rootId = 0;
@@ -182,6 +193,14 @@ public class ScreenView extends View {
 
 		if (!_isBlanked)
 			_xServer.resetScreenSaver ();
+	}
+
+	public void postInvalidate() {
+	    postInvalidate(0, 0, mWidth, mHeight);
+	}
+
+	public void postInvalidate(int left, int top, int right, int bottom) {
+	    mListener.onPostInvalidate(left, top, right, bottom);
 	}
 
 	/**
@@ -295,13 +314,13 @@ public class ScreenView extends View {
 	 *
 	 * @param canvas	The canvas on which the view will be drawn.
 	 */
-	@Override
+	//@Override
 	protected void
 	onDraw (
 		Canvas		canvas
 	) {
 		if (_rootWindow == null) {
-			super.onDraw (canvas);
+			//super.onDraw (canvas);
 			return;
 		}
 
@@ -332,7 +351,7 @@ public class ScreenView extends View {
 	 * @param oldWidth	The old width.
 	 * @param oldHeight	The old height.
 	 */
-	@Override
+	//@Override
 	protected void
 	onSizeChanged (
 		int			width,
@@ -340,22 +359,8 @@ public class ScreenView extends View {
 		int			oldWidth,
 		int			oldHeight
 	) {
-		super.onSizeChanged (width, height, oldWidth, oldHeight);
-
-		_rootWindow = new Window (_rootId, _xServer, null, this, null,
-										0, 0, width, height, 0, false, true);
-		_xServer.addResource (_rootWindow);
-
-		_currentCursor = _rootWindow.getCursor ();
-		_currentCursorX = width / 2;
-		_currentCursorY = height / 2;
-		_drawnCursorX = _currentCursorX;
-		_drawnCursorY = _currentCursorY;
-		_motionX = _currentCursorX;
-		_motionY = _currentCursorY;
-		_motionWindow = _rootWindow;
-		_focusWindow = _rootWindow;
-
+		//super.onSizeChanged (width, height, oldWidth, oldHeight);
+	    initialize(width, height);
 			// Everything set up, so start listening for clients.
 		_xServer.start ();
 	}
@@ -668,7 +673,7 @@ public class ScreenView extends View {
 	 * @param event	The touch event.
 	 * @return	True if the event was handled.
 	 */
-	@Override
+	//@Override
 	public boolean
 	onTouchEvent (
 		MotionEvent		event
@@ -692,7 +697,7 @@ public class ScreenView extends View {
 	 * @param event	The key event.
 	 * @return	True if the event was handled.
 	 */
-	@Override
+	//@Override
 	public boolean
 	onKeyDown (
 		int			keycode,
@@ -749,7 +754,7 @@ public class ScreenView extends View {
 	 * @param event	The key event.
 	 * @return	True if the event was handled.
 	 */
-	@Override
+	//@Override
 	public boolean
 	onKeyUp (
 		int			keycode,
@@ -1501,5 +1506,29 @@ public class ScreenView extends View {
 		_focusWindow = w;
 		_focusRevertTo = revertTo;
 		_focusLastChangeTime = time;
+	}
+
+	private int getWidth() {
+	    return mWidth;
+	}
+
+	private int getHeight() {
+	    return mHeight;
+	}
+
+	private void initialize(int width, int height) {
+		_rootWindow = new Window (_rootId, _xServer, null, this, null,
+										0, 0, width, height, 0, false, true);
+		_xServer.addResource (_rootWindow);
+
+		_currentCursor = _rootWindow.getCursor ();
+		_currentCursorX = width / 2;
+		_currentCursorY = height / 2;
+		_drawnCursorX = _currentCursorX;
+		_drawnCursorY = _currentCursorY;
+		_motionX = _currentCursorX;
+		_motionY = _currentCursorY;
+		_motionWindow = _rootWindow;
+		_focusWindow = _rootWindow;
 	}
 }

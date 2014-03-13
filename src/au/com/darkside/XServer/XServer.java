@@ -86,7 +86,10 @@ public class XServer {
 	public XServer (
 		Context		c,
 		int			port,
-		String		windowManagerClass
+		String		windowManagerClass,
+		int width,
+		int height,
+		XScreenListener screenListener
 	) {
 		_context = c;
 		_port = port;
@@ -117,7 +120,8 @@ public class XServer {
 		addResource (new Cursor (2, this, null, (Font) null, (Font) null,
 											0, 1, 0xff000000, 0xffffffff));
 
-		_screen = new ScreenView (_context, this, 3, pixelsPerMillimeter ());
+		_screen = new ScreenView(_context, this, 3, pixelsPerMillimeter(),
+		                         width, height, screenListener);
 
 		Colormap	cmap = new Colormap (4, this, null, _screen);
 
@@ -128,6 +132,11 @@ public class XServer {
 		Atom.registerPredefinedAtoms (this);
 
 		_timestamp = System.currentTimeMillis ();
+	}
+
+	public XServer(Context c, int width, int height,
+	               XScreenListener screenListener) {
+	    this(c, 6000, null, width, height, screenListener);
 	}
 
 	/**
