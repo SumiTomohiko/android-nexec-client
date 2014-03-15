@@ -25,6 +25,9 @@ import android.widget.Toast;
 import au.com.darkside.XServer.XScreenListener;
 import au.com.darkside.XServer.XServer;
 
+import jp.gr.java_conf.neko_daisuki.android.nexec.client.share.INexecCallback;
+import jp.gr.java_conf.neko_daisuki.android.nexec.client.share.INexecService;
+import jp.gr.java_conf.neko_daisuki.android.nexec.client.share.SessionId;
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
 import jp.gr.java_conf.neko_daisuki.fsyscall.SocketAddress;
 import jp.gr.java_conf.neko_daisuki.fsyscall.UnixDomainAddress;
