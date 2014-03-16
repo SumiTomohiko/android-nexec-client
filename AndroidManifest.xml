@@ -23,7 +23,7 @@
         </activity>
         <service android:name=".MainService">
             <intent-filter>
-                <action android:name="jp.gr.java_conf.neko_daisuki.android.nexec.client.INexecService"/>
+                <action android:name="jp.gr.java_conf.neko_daisuki.android.nexec.client.share.INexecService"/>
             </intent-filter>
         </service>
     </application>
