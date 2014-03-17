@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">nexec client</string>
-    <string name="action_settings">Settings</string>
     <string name="main_statement">
         Your application requested to run nexec in the following conditions.
         Are you okey?

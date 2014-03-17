@@ -20,7 +20,6 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.JsonWriter;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.View.OnClickListener;
 import android.view.View;
 import android.widget.Adapter;
@@ -429,13 +428,6 @@ public class MainActivity extends Activity {
     }
 
     private Random mRandom = new Random();
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
