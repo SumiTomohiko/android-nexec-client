@@ -3,7 +3,7 @@
     <string name="app_name">nexec client</string>
     <string name="main_statement">
         Your application requested to run nexec in the following conditions.
-        Are you okey?
+        Are you okay?
     </string>
     <string name="host_label">Host</string>
     <string name="port_label">Port</string>
