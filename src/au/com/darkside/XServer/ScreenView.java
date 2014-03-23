@@ -94,6 +94,7 @@ public class ScreenView {
 		_installedColormaps = new Vector<Colormap>();
 		_pixelsPerMillimeter = pixelsPerMillimeter;
 		_paint = new Paint ();
+		initialize(width, height);
 
 		mWidth = width;
 		mHeight = height;
