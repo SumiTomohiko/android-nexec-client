@@ -3,6 +3,10 @@
  */
 package au.com.darkside.XServer;
 
+import android.util.SparseArray;
+
+import au.com.darkside.XServer.Xext.Extensions;
+
 /**
  * @author Matthew Kwan
  *
@@ -131,4 +135,138 @@ public class RequestCode {
 	public static final byte	NoOperation = 127;
 	public static final byte	ExtensionStart = -128;
 	public static final byte	ExtensionEnd = -1;
+
+	private static SparseArray<String> mCodes = new SparseArray<String>();
+
+	public static String toString(byte requestCode) {
+		return mCodes.get(requestCode);
+	}
+
+	static {
+		mCodes.put(CreateWindow, "CreateWindow");
+		mCodes.put(ChangeWindowAttributes, "ChangeWindowAttributes");
+		mCodes.put(DestroyWindow, "DestroyWindow");
+		mCodes.put(DestroySubwindows, "DestroySubwindows");
+		mCodes.put(ChangeSaveSet, "ChangeSaveSet");
+		mCodes.put(ReparentWindow, "ReparentWindow");
+		mCodes.put(MapWindow, "MapWindow");
+		mCodes.put(MapSubwindows, "MapSubwindows");
+		mCodes.put(UnmapWindow, "UnmapWindow");
+		mCodes.put(UnmapSubwindows, "UnmapSubwindows");
+		mCodes.put(ConfigureWindow, "ConfigureWindow");
+		mCodes.put(CirculateWindow, "CirculateWindow");
+		mCodes.put(GetGeometry, "GetGeometry");
+		mCodes.put(QueryTree, "QueryTree");
+		mCodes.put(InternAtom, "InternAtom");
+		mCodes.put(GetAtomName, "GetAtomName");
+		mCodes.put(ChangeProperty, "ChangeProperty");
+		mCodes.put(DeleteProperty, "DeleteProperty");
+		mCodes.put(GetProperty, "GetProperty");
+		mCodes.put(ListProperties, "ListProperties");
+		mCodes.put(SetSelectionOwner, "SetSelectionOwner");
+		mCodes.put(GetSelectionOwner, "GetSelectionOwner");
+		mCodes.put(ConvertSelection, "ConvertSelection");
+		mCodes.put(SendEvent, "SendEvent");
+		mCodes.put(GrabPointer, "GrabPointer");
+		mCodes.put(UngrabPointer, "UngrabPointer");
+		mCodes.put(GrabButton, "GrabButton");
+		mCodes.put(UngrabButton, "UngrabButton");
+		mCodes.put(ChangeActivePointerGrab, "ChangeActivePointerGrab");
+		mCodes.put(GrabKeyboard, "GrabKeyboard");
+		mCodes.put(UngrabKeyboard, "UngrabKeyboard");
+		mCodes.put(GrabKey, "GrabKey");
+		mCodes.put(UngrabKey, "UngrabKey");
+		mCodes.put(AllowEvents, "AllowEvents");
+		mCodes.put(GrabServer, "GrabServer");
+		mCodes.put(UngrabServer, "UngrabServer");
+		mCodes.put(QueryPointer, "QueryPointer");
+		mCodes.put(GetMotionEvents, "GetMotionEvents");
+		mCodes.put(TranslateCoordinates, "TranslateCoordinates");
+		mCodes.put(WarpPointer, "WarpPointer");
+		mCodes.put(SetInputFocus, "SetInputFocus");
+		mCodes.put(GetInputFocus, "GetInputFocus");
+		mCodes.put(QueryKeymap, "QueryKeymap");
+		mCodes.put(OpenFont, "OpenFont");
+		mCodes.put(CloseFont, "CloseFont");
+		mCodes.put(QueryFont, "QueryFont");
+		mCodes.put(QueryTextExtents, "QueryTextExtents");
+		mCodes.put(ListFonts, "ListFonts");
+		mCodes.put(ListFontsWithInfo, "ListFontsWithInfo");
+		mCodes.put(SetFontPath, "SetFontPath");
+		mCodes.put(GetFontPath, "GetFontPath");
+		mCodes.put(CreatePixmap, "CreatePixmap");
+		mCodes.put(FreePixmap, "FreePixmap");
+		mCodes.put(CreateGC, "CreateGC");
+		mCodes.put(ChangeGC, "ChangeGC");
+		mCodes.put(CopyGC, "CopyGC");
+		mCodes.put(SetDashes, "SetDashes");
+		mCodes.put(SetClipRectangles, "SetClipRectangles");
+		mCodes.put(FreeGC, "FreeGC");
+		mCodes.put(ClearArea, "ClearArea");
+		mCodes.put(CopyArea, "CopyArea");
+		mCodes.put(CopyPlane, "CopyPlane");
+		mCodes.put(PolyPoint, "PolyPoint");
+		mCodes.put(PolyLine, "PolyLine");
+		mCodes.put(PolySegment, "PolySegment");
+		mCodes.put(PolyRectangle, "PolyRectangle");
+		mCodes.put(PolyArc, "PolyArc");
+		mCodes.put(FillPoly, "FillPoly");
+		mCodes.put(PolyFillRectangle, "PolyFillRectangle");
+		mCodes.put(PolyFillArc, "PolyFillArc");
+		mCodes.put(PutImage, "PutImage");
+		mCodes.put(GetImage, "GetImage");
+		mCodes.put(PolyText8, "PolyText8");
+		mCodes.put(PolyText16, "PolyText16");
+		mCodes.put(ImageText8, "ImageText8");
+		mCodes.put(ImageText16, "ImageText16");
+		mCodes.put(CreateColormap, "CreateColormap");
+		mCodes.put(FreeColormap, "FreeColormap");
+		mCodes.put(CopyColormapAndFree, "CopyColormapAndFree");
+		mCodes.put(InstallColormap, "InstallColormap");
+		mCodes.put(UninstallColormap, "UninstallColormap");
+		mCodes.put(ListInstalledColormaps, "ListInstalledColormaps");
+		mCodes.put(AllocColor, "AllocColor");
+		mCodes.put(AllocNamedColor, "AllocNamedColor");
+		mCodes.put(AllocColorCells, "AllocColorCells");
+		mCodes.put(AllocColorPlanes, "AllocColorPlanes");
+		mCodes.put(FreeColors, "FreeColors");
+		mCodes.put(StoreColors, "StoreColors");
+		mCodes.put(StoreNamedColor, "StoreNamedColor");
+		mCodes.put(QueryColors, "QueryColors");
+		mCodes.put(LookupColor, "LookupColor");
+		mCodes.put(CreateCursor, "CreateCursor");
+		mCodes.put(CreateGlyphCursor, "CreateGlyphCursor");
+		mCodes.put(FreeCursor, "FreeCursor");
+		mCodes.put(RecolorCursor, "RecolorCursor");
+		mCodes.put(QueryBestSize, "QueryBestSize");
+		mCodes.put(QueryExtension, "QueryExtension");
+		mCodes.put(ListExtensions, "ListExtensions");
+		mCodes.put(ChangeKeyboardMapping, "ChangeKeyboardMapping");
+		mCodes.put(GetKeyboardMapping, "GetKeyboardMapping");
+		mCodes.put(ChangeKeyboardControl, "ChangeKeyboardControl");
+		mCodes.put(GetKeyboardControl, "GetKeyboardControl");
+		mCodes.put(Bell, "Bell");
+		mCodes.put(ChangePointerControl, "ChangePointerControl");
+		mCodes.put(GetPointerControl, "GetPointerControl");
+		mCodes.put(SetScreenSaver, "SetScreenSaver");
+		mCodes.put(GetScreenSaver, "GetScreenSaver");
+		mCodes.put(ChangeHosts, "ChangeHosts");
+		mCodes.put(ListHosts, "ListHosts");
+		mCodes.put(SetAccessControl, "SetAccessControl");
+		mCodes.put(SetCloseDownMode, "SetCloseDownMode");
+		mCodes.put(KillClient, "KillClient");
+		mCodes.put(RotateProperties, "RotateProperties");
+		mCodes.put(ForceScreenSaver, "ForceScreenSaver");
+		mCodes.put(SetPointerMapping, "SetPointerMapping");
+		mCodes.put(GetPointerMapping, "GetPointerMapping");
+		mCodes.put(SetModifierMapping, "SetModifierMapping");
+		mCodes.put(GetModifierMapping, "GetModifierMapping");
+		mCodes.put(NoOperation, "NoOperation");
+		mCodes.put(ExtensionStart, "ExtensionStart");
+		mCodes.put(ExtensionEnd, "ExtensionEnd");
+
+		mCodes.put(Extensions.XGE, "Extensions.XGE");
+		mCodes.put(Extensions.BigRequests, "Extensions.BigRequests");
+		mCodes.put(Extensions.Shape, "Extensions.Shape");
+	}
 }
