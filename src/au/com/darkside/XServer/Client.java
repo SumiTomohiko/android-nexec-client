@@ -9,6 +9,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Vector;
 
+import android.util.Log;
+
 import au.com.darkside.XServer.Xext.Extensions;
 
 /**
@@ -48,6 +50,8 @@ public class Client extends Thread {
 	public static final int		Destroy = 0;
 	public static final int		RetainPermanent = 1;
 	public static final int		RetainTemporary = 2;
+
+	private static final String LOG_TAG = "x";
 
 	private final XServer			_xServer;
 	private final CloseSocketProc mCloseSocketProc;
@@ -284,7 +288,8 @@ public class Client extends Thread {
 		_inputOutput.flush ();
 
 		while (!_closeConnection) {
-			byte	opcode = (byte) _inputOutput.readByte ();
+			int n = _inputOutput.readByte ();
+			byte	opcode = (byte)n;
 			byte	arg = (byte) _inputOutput.readByte ();
 			int		requestLength = _inputOutput.readShort ();
 			int		bytesRemaining;
@@ -308,6 +313,8 @@ public class Client extends Thread {
 			}
 
 			synchronized (_xServer) {
+			    String name = RequestCode.toString(opcode);
+			    Log.i(LOG_TAG, String.format("request: %s (%d)", name, opcode));
 				processRequest (opcode, arg, bytesRemaining);
 			}
 		}
