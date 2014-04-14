@@ -6,6 +6,7 @@ package au.com.darkside.XServer;
 import java.io.IOException;
 import java.util.Vector;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -308,6 +309,11 @@ public class ScreenView {
 			Window.focusInOutNotify (w, _focusWindow, pw, _rootWindow,
 										_grabKeyboardWindow == null ? 0 : 3);
 		}
+	}
+
+	@SuppressLint("WrongCall")
+    public void draw(Canvas canvas) {
+	    onDraw(canvas);
 	}
 
 	/**

@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
@@ -30,14 +32,14 @@ import jp.gr.java_conf.neko_daisuki.android.nexec.client.share.INexecService;
 import jp.gr.java_conf.neko_daisuki.android.nexec.client.share.SessionId;
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
 import jp.gr.java_conf.neko_daisuki.fsyscall.SocketAddress;
-import jp.gr.java_conf.neko_daisuki.fsyscall.UnixDomainAddress;
 import jp.gr.java_conf.neko_daisuki.fsyscall.Unix;
+import jp.gr.java_conf.neko_daisuki.fsyscall.UnixDomainAddress;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Links;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Slave;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.SocketCore;
-import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient.Environment;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
+import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient.Environment;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
 
 public class MainService extends Service {
@@ -311,18 +313,26 @@ public class MainService extends Service {
                     InputStream in = clientToServerPipe.getInputStream();
                     OutputStream out = serverToClientPipe.getOutputStream();
                     xServer.start(in, out);
+                    mSession.setXServer(xServer);
+
+                    Bitmap.Config config = Bitmap.Config.ARGB_8888;
+                    Bitmap bitmap = Bitmap.createBitmap(mXWidth, mXHeight,
+                                                        config);
+                    mSession.setBitmap(bitmap);
                 }
             }
 
             private SessionParameter mSessionParameter;
+            private Session mSession;
 
             private Callback mCallback;
             private InputStream mStdin = new Input();
             private OutputStream mStdout = new Stdout();
             private OutputStream mStderr = new Stderr();
 
-            public Task(SessionParameter param) {
+            public Task(SessionParameter param, Session session) {
                 mSessionParameter = param;
+                mSession = session;
             }
 
             public void setCallback(INexecCallback callback) {
@@ -387,13 +397,31 @@ public class MainService extends Service {
         private class Session {
 
             private Task mTask;
+            private XServer mXServer;
+            private Bitmap mBitmap;
 
-            public Session(Task task) {
+            public void setTask(Task task) {
                 mTask = task;
             }
 
             public Task getTask() {
                 return mTask;
+            }
+
+            public XServer getXServer() {
+                return mXServer;
+            }
+
+            public Bitmap getBitmap() {
+                return mBitmap;
+            }
+
+            public void setBitmap(Bitmap bitmap) {
+                mBitmap = bitmap;
+            }
+
+            public void setXServer(XServer xServer) {
+                mXServer = xServer;
             }
         }
 
@@ -476,6 +504,21 @@ public class MainService extends Service {
         @Override
         public void writeStdin(SessionId sessionId, int b) throws RemoteException {
             // TODO: Write stdin.
+        }
+
+        @Override
+        public Bitmap xDraw(SessionId sessionId) throws RemoteException {
+            Log.i(LOG_TAG, String.format("xDraw: %s", sessionId));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return null;
+            }
+            Bitmap bitmap = session.getBitmap();
+            if (bitmap == null) {
+                return null;
+            }
+            session.getXServer().getScreen().draw(new Canvas(bitmap));
+            return bitmap;
         }
 
         private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
@@ -604,13 +647,15 @@ public class MainService extends Service {
                 return;
             }
 
-            Task task = new Task(param);
+            Session session = new Session();
+            Task task = new Task(param, session);
             task.setCallback(callback);
             task.execute();
+            session.setTask(task);
             String fmt = "A new task started for session %s.";
             Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
 
-            mSessions.put(sessionId, new Session(task));
+            mSessions.put(sessionId, session);
         }
 
         private boolean removeSessionFile(SessionId sessionId) {
