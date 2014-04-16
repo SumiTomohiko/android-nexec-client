@@ -501,8 +501,7 @@ public class MainService extends Service {
             if (session == null) {
                 return;
             }
-
-            session.getTask().cancel(true);
+            session.getTask().cancelNexec();
             mSessions.remove(sessionId);
         }
 
@@ -524,16 +523,6 @@ public class MainService extends Service {
             }
             session.getXServer().getScreen().draw(new Canvas(bitmap));
             return bitmap;
-        }
-
-        @Override
-        public void cancel(SessionId sessionId) throws RemoteException {
-            Log.i(LOG_TAG, String.format("cancel: %s", sessionId));
-            Session session = mSessions.get(sessionId);
-            if (session == null) {
-                return;
-            }
-            session.getTask().cancelNexec();
         }
 
         private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
