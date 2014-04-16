@@ -324,6 +324,7 @@ public class MainService extends Service {
 
             private SessionParameter mSessionParameter;
             private Session mSession;
+            private NexecClient mNexecClient;
 
             private Callback mCallback;
             private InputStream mStdin = new Input();
@@ -338,6 +339,10 @@ public class MainService extends Service {
             public void setCallback(INexecCallback callback) {
                 mCallback = callback != null ? new TrueCallback(callback)
                                              : new NopCallback();
+            }
+
+            public void cancelNexec() {
+                mNexecClient.cancel();
             }
 
             @Override
@@ -357,12 +362,12 @@ public class MainService extends Service {
                     perm.allowPath(path);
                 }
 
-                NexecClient nexec = new NexecClient();
+                mNexecClient = new NexecClient();
                 int xWidth = mSessionParameter.xWidth;
                 int xHeight = mSessionParameter.xHeight;
                 SlaveListener listener = new SlaveListener(xWidth, xHeight);
                 try {
-                    int exitCode = nexec.run(
+                    int exitCode = mNexecClient.run(
                             mSessionParameter.host, mSessionParameter.port,
                             mSessionParameter.args, mStdin, mStdout, mStderr,
                             mSessionParameter.env, perm,
@@ -519,6 +524,16 @@ public class MainService extends Service {
             }
             session.getXServer().getScreen().draw(new Canvas(bitmap));
             return bitmap;
+        }
+
+        @Override
+        public void cancel(SessionId sessionId) throws RemoteException {
+            Log.i(LOG_TAG, String.format("cancel: %s", sessionId));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
+            }
+            session.getTask().cancelNexec();
         }
 
         private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
