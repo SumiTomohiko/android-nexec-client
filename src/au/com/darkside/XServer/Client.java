@@ -313,8 +313,10 @@ public class Client extends Thread {
 			}
 
 			synchronized (_xServer) {
+			    String fmt = "request: opcode=%s (%d), bytesRemaining=%d";
 			    String name = RequestCode.toString(opcode);
-			    Log.i(LOG_TAG, String.format("request: %s (%d)", name, opcode));
+			    String msg = String.format(fmt, name, opcode, bytesRemaining);
+			    Log.i(LOG_TAG, msg);
 				processRequest (opcode, arg, bytesRemaining);
 			}
 		}
