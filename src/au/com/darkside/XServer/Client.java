@@ -51,7 +51,7 @@ public class Client extends Thread {
 	public static final int		RetainPermanent = 1;
 	public static final int		RetainTemporary = 2;
 
-	private static final String LOG_TAG = "X server";
+	private static final String LOG_TAG = "X Server";
 
 	private final XServer			_xServer;
 	private final CloseSocketProc mCloseSocketProc;
