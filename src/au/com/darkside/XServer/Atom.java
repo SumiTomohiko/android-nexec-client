@@ -4,6 +4,7 @@
 package au.com.darkside.XServer;
 
 import java.io.IOException;
+import java.util.Locale;
 
 
 /**
@@ -250,5 +251,10 @@ public class Atom {
 			io.writePadBytes (20);	// Unused.
 		}
 		io.flush ();
+	}
+
+	public String toString() {
+	    String fmt = "Atom(id=%d, name=%s)";
+	    return String.format(Locale.ROOT, fmt, getId(), getName());
 	}
 }

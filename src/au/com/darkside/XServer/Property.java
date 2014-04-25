@@ -5,8 +5,11 @@ package au.com.darkside.XServer;
 
 import java.io.IOException;
 import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Vector;
-
 
 /**
  * @author Matthew KWan
@@ -228,6 +231,20 @@ public class Property {
 		}
 	}
 
+	public static String toString(Map<?, Property> properties) {
+	    List<String> l = new LinkedList<String>();
+	    for (Property property: properties.values()) {
+	        l.add(property.toString());
+	    }
+	    int size = l.size();
+	    StringBuilder buffer = new StringBuilder(0 < size ? l.get(0) : "");
+	    for (int i = 1; i < size; i++) {
+	        buffer.append(", ");
+	        buffer.append(l.get(i));
+	    }
+	    return buffer.toString();
+	}
+
 	/**
 	 * Process a GetProperty request.
 	 *
@@ -446,5 +463,10 @@ public class Property {
 										xServer.getTimestamp (), 0);
 			}
 		}
+	}
+
+	public String toString() {
+	    String fmt = "Property(id=%d, type=%d, format=%d)";
+	    return String.format(Locale.ROOT, fmt, _id, _type, _format);
 	}
 }
