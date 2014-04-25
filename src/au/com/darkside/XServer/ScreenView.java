@@ -23,6 +23,9 @@ import android.view.MotionEvent;
  * It also implements the screen's root window.
  */
 public class ScreenView {
+
+    private static final int BUTTON_LEFT = 1;
+
 	private final XServer			_xServer;
 	private final int				_rootId;
 	private Window					_rootWindow = null;
@@ -479,6 +482,14 @@ public class ScreenView {
 		int			mode
 	) {
 		updatePointerPosition (_currentCursorX, _currentCursorY, mode);
+	}
+
+	public void releaseLeftButton() {
+	    updatePointerButtons(BUTTON_LEFT, false);
+	}
+
+	public void pressLeftButton() {
+	    updatePointerButtons(BUTTON_LEFT, true);
 	}
 
 	/**

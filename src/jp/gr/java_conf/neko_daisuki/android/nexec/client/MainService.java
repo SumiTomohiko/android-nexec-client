@@ -24,6 +24,7 @@ import android.util.JsonReader;
 import android.util.Log;
 import android.widget.Toast;
 
+import au.com.darkside.XServer.ScreenView;
 import au.com.darkside.XServer.XScreenListener;
 import au.com.darkside.XServer.XServer;
 
@@ -523,6 +524,40 @@ public class MainService extends Service {
             }
             session.getXServer().getScreen().draw(new Canvas(bitmap));
             return bitmap;
+        }
+
+        @Override
+        public void xLeftButtonPress(SessionId sessionId) throws RemoteException {
+            String fmt = "xLeftButtonPress: sessionId=%s";
+            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
+            }
+            session.getXServer().getScreen().pressLeftButton();
+        }
+
+        @Override
+        public void xLeftButtonRelease(SessionId sessionId) throws RemoteException {
+            String fmt = "xLeftButtonRelease: sessionId=%s";
+            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
+            }
+            session.getXServer().getScreen().releaseLeftButton();
+        }
+
+        @Override
+        public void xMotionNotify(SessionId sessionId, int x, int y) throws RemoteException {
+            String fmt = "xMotionNotify: sessionId=%s, x=%d, y=%d";
+            Log.i(LOG_TAG, String.format(fmt, sessionId.toString(), x, y));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
+            }
+            ScreenView view = session.getXServer().getScreen();
+            view.updatePointerPosition(x, y, 0);
         }
 
         private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
