@@ -560,6 +560,28 @@ public class MainService extends Service {
             view.updatePointerPosition(x, y, 0);
         }
 
+        @Override
+        public void xRightButtonPress(SessionId sessionId) throws RemoteException {
+            String fmt = "xRightButtonPress: sessionId=%s";
+            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
+            }
+            session.getXServer().getScreen().pressRightButton();
+        }
+
+        @Override
+        public void xRightButtonRelease(SessionId sessionId) throws RemoteException {
+            String fmt = "xRightButtonRelease: sessionId=%s";
+            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            Session session = mSessions.get(sessionId);
+            if (session == null) {
+                return;
+            }
+            session.getXServer().getScreen().releaseRightButton();
+        }
+
         private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
             SessionParameter param = new SessionParameter();
 

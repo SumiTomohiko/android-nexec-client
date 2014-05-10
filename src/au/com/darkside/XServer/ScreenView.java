@@ -25,6 +25,7 @@ import android.view.MotionEvent;
 public class ScreenView {
 
     private static final int BUTTON_LEFT = 1;
+    private static final int BUTTON_RIGHT = 3;
 
 	private final XServer			_xServer;
 	private final int				_rootId;
@@ -490,6 +491,14 @@ public class ScreenView {
 
 	public void pressLeftButton() {
 	    updatePointerButtons(BUTTON_LEFT, true);
+	}
+
+	public void releaseRightButton() {
+	    updatePointerButtons(BUTTON_RIGHT, false);
+	}
+
+	public void pressRightButton() {
+	    updatePointerButtons(BUTTON_RIGHT, true);
 	}
 
 	/**
