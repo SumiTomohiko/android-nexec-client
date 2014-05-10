@@ -516,11 +516,11 @@ public class MainService extends Service {
             Log.i(LOG_TAG, String.format("xDraw: %s", sessionId));
             Session session = mSessions.get(sessionId);
             if (session == null) {
-                return null;
+                return createBlankBitmap();
             }
             Bitmap bitmap = session.getBitmap();
             if (bitmap == null) {
-                return null;
+                return createBlankBitmap();
             }
             session.getXServer().getScreen().draw(new Canvas(bitmap));
             return bitmap;
@@ -580,6 +580,10 @@ public class MainService extends Service {
                 return;
             }
             session.getXServer().getScreen().releaseRightButton();
+        }
+
+        private Bitmap createBlankBitmap() {
+            return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
         }
 
         private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
