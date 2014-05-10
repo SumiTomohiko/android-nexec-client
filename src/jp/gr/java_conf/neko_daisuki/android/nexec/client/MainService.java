@@ -405,6 +405,7 @@ public class MainService extends Service {
             private Task mTask;
             private XServer mXServer;
             private Bitmap mBitmap;
+            private Canvas mCanvas;
 
             public void setTask(Task task) {
                 mTask = task;
@@ -422,8 +423,13 @@ public class MainService extends Service {
                 return mBitmap;
             }
 
+            public Canvas getCanvas() {
+                return mCanvas;
+            }
+
             public void setBitmap(Bitmap bitmap) {
                 mBitmap = bitmap;
+                mCanvas = new Canvas(bitmap);
             }
 
             public void setXServer(XServer xServer) {
@@ -518,12 +524,12 @@ public class MainService extends Service {
             if (session == null) {
                 return createBlankBitmap();
             }
-            Bitmap bitmap = session.getBitmap();
-            if (bitmap == null) {
+            Canvas canvas = session.getCanvas();
+            if (canvas == null) {
                 return createBlankBitmap();
             }
-            session.getXServer().getScreen().draw(new Canvas(bitmap));
-            return bitmap;
+            session.getXServer().getScreen().draw(canvas);
+            return session.getBitmap();
         }
 
         @Override
