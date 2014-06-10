@@ -150,6 +150,7 @@ public class MainService extends Service {
                 public abstract void writeStdout(byte[] buf) throws RemoteException;
                 public abstract void writeStderr(byte[] buf) throws RemoteException;
                 public abstract void exit(int status) throws RemoteException;
+                public abstract void error(String message) throws RemoteException;
                 public abstract void xInvalidate(int left, int top, int right,
                                                  int bottom) throws RemoteException;
             }
@@ -171,6 +172,10 @@ public class MainService extends Service {
                 @Override
                 public void xInvalidate(int left, int top, int right,
                                            int bottom) throws RemoteException {
+                }
+
+                @Override
+                public void error(String message) throws RemoteException {
                 }
             }
 
@@ -201,6 +206,11 @@ public class MainService extends Service {
                 public void xInvalidate(int left, int top, int right,
                                            int bottom) throws RemoteException {
                     mCallback.xInvalidate(left, top, right, bottom);
+                }
+
+                @Override
+                public void error(String message) throws RemoteException {
+                    mCallback.error(message);
                 }
             }
 
@@ -390,6 +400,11 @@ public class MainService extends Service {
             }
 
             private void handleException(String msg, Exception e) {
+                try {
+                    mCallback.error(msg);
+                }
+                catch (RemoteException e1) {
+                }
                 setCallback(null);
                 e.printStackTrace();
 
