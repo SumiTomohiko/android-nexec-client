@@ -145,6 +145,7 @@ public class RequestCode {
 	static {
 		mCodes.put(CreateWindow, "CreateWindow");
 		mCodes.put(ChangeWindowAttributes, "ChangeWindowAttributes");
+		mCodes.put(GetWindowAttributes, "GetWindowAttributes");
 		mCodes.put(DestroyWindow, "DestroyWindow");
 		mCodes.put(DestroySubwindows, "DestroySubwindows");
 		mCodes.put(ChangeSaveSet, "ChangeSaveSet");
