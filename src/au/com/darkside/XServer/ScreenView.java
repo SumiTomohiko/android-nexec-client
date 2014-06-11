@@ -99,7 +99,6 @@ public class ScreenView {
 		_installedColormaps = new Vector<Colormap>();
 		_pixelsPerMillimeter = pixelsPerMillimeter;
 		_paint = new Paint ();
-		initialize(width, height);
 
 		mWidth = width;
 		mHeight = height;
@@ -119,6 +118,22 @@ public class ScreenView {
 		_rootId = 0;
 		_installedColormaps = null;
 		_pixelsPerMillimeter = 0;
+	}
+
+	public void initialize() {
+		_rootWindow = new Window (_rootId, _xServer, null, this, null,
+										0, 0, mWidth, mHeight, 0, false, true);
+		_xServer.addResource (_rootWindow);
+
+		_currentCursor = _rootWindow.getCursor ();
+		_currentCursorX = mWidth / 2;
+		_currentCursorY = mHeight / 2;
+		_drawnCursorX = _currentCursorX;
+		_drawnCursorY = _currentCursorY;
+		_motionX = _currentCursorX;
+		_motionY = _currentCursorY;
+		_motionWindow = _rootWindow;
+		_focusWindow = _rootWindow;
 	}
 
 	/**
@@ -362,6 +377,7 @@ public class ScreenView {
 	 * @param oldWidth	The old width.
 	 * @param oldHeight	The old height.
 	 */
+	/*
 	//@Override
 	protected void
 	onSizeChanged (
@@ -375,6 +391,7 @@ public class ScreenView {
 			// Everything set up, so start listening for clients.
 		_xServer.start ();
 	}
+	*/
 
 	/**
 	 * Move the pointer on the screen.
@@ -1541,21 +1558,5 @@ public class ScreenView {
 
 	private int getHeight() {
 	    return mHeight;
-	}
-
-	private void initialize(int width, int height) {
-		_rootWindow = new Window (_rootId, _xServer, null, this, null,
-										0, 0, width, height, 0, false, true);
-		_xServer.addResource (_rootWindow);
-
-		_currentCursor = _rootWindow.getCursor ();
-		_currentCursorX = width / 2;
-		_currentCursorY = height / 2;
-		_drawnCursorX = _currentCursorX;
-		_drawnCursorY = _currentCursorY;
-		_motionX = _currentCursorX;
-		_motionY = _currentCursorY;
-		_motionWindow = _rootWindow;
-		_focusWindow = _rootWindow;
 	}
 }

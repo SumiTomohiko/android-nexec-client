@@ -24,6 +24,7 @@ import android.os.CountDownTimer;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
+
 import au.com.darkside.XServer.Xext.Extensions;
 import au.com.darkside.XServer.Xext.XShape;
 
@@ -132,6 +133,8 @@ public class XServer {
 		Atom.registerPredefinedAtoms (this);
 
 		_timestamp = System.currentTimeMillis ();
+
+		_screen.initialize();
 	}
 
 	public XServer(Context c, int width, int height,
