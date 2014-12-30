@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Set;
 import java.util.Vector;
 
@@ -1026,6 +1027,12 @@ public class XServer {
 			majorOpcode = pmajorOpcode;
 			firstEvent = pfirstEvent;
 			firstError = pfirstError;
+		}
+
+		public String toString() {
+		    String fmt = "Extension(majorOpcode=%d, firstEvent=%d, firstError=%d)";
+		    return String.format(Locale.ROOT, fmt, majorOpcode, firstEvent,
+		                         firstError);
 		}
 	}
 
