@@ -1,6 +1,6 @@
 
 CMD = ant
-SRC_DIR = src
+SRC_DIR = app/src/main/java
 PKG = jp.gr.java_conf.neko_daisuki.android.nexec.client
 PKG_DIR = $(SRC_DIR)/jp/gr/java_conf/neko_daisuki/android/nexec/client
 X_PKG = au.com.darkside.XServer
