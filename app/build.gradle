@@ -11,6 +11,10 @@ android {
         versionName '1.0.0dev2'
     }
     buildTypes {
+        debug {
+            debuggable true
+        }
+
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -25,3 +29,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:21.0.3'
     compile project(':android-nexec-client-share')
 }
+
+// vim: filetype=groovy tabstop=4 shiftwidth=4 expandtab
