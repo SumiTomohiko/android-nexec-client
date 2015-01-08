@@ -1,1 +1,1 @@
-include ':app', ':android-nexec-client-share'
+include ':app', ':android-nexec-client-share', ':fsyscall', ':nexec'

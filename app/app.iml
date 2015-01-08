@@ -85,11 +85,12 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="appcompat-v7-21.0.3" level="project" />
     <orderEntry type="library" exported="" name="nexec-client" level="project" />
-    <orderEntry type="library" exported="" name="android-support-v4" level="project" />
     <orderEntry type="library" exported="" name="support-v4-21.0.3" level="project" />
     <orderEntry type="library" exported="" name="support-annotations-21.0.3" level="project" />
     <orderEntry type="library" exported="" name="fsyscall-slave" level="project" />
+    <orderEntry type="module" module-name="nexec" exported="" />
     <orderEntry type="module" module-name="android-nexec-client-share" exported="" />
+    <orderEntry type="module" module-name="fsyscall" exported="" />
   </component>
 </module>
 

@@ -11,6 +11,8 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/android-nexec-client-share" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/fsyscall" />
+            <option value="$PROJECT_DIR$/nexec" />
           </set>
         </option>
       </GradleProjectSettings>
