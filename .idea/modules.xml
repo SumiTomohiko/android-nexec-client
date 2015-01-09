@@ -5,7 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/android-nexec-client.iml" filepath="$PROJECT_DIR$/android-nexec-client.iml" />
       <module fileurl="file://$PROJECT_DIR$/android-nexec-client-share/android-nexec-client-share.iml" filepath="$PROJECT_DIR$/android-nexec-client-share/android-nexec-client-share.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/fsyscall/fsyscall.iml" filepath="$PROJECT_DIR$/fsyscall/fsyscall.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../fsyscall2/java/fsyscall.iml" filepath="$PROJECT_DIR$/../fsyscall2/java/fsyscall.iml" />
       <module fileurl="file://$PROJECT_DIR$/nexec/nexec.iml" filepath="$PROJECT_DIR$/nexec/nexec.iml" />
     </modules>
   </component>
