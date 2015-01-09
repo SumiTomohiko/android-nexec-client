@@ -1,3 +1,5 @@
 include ':app', ':android-nexec-client-share', ':fsyscall', ':nexec'
 
+apply from: 'private.gradle'
+
 // vim: filetype=groovy tabstop=4 shiftwidth=4 expandtab softtabstop=4
