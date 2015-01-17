@@ -3,6 +3,8 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/android-nexec-client-share" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../fsyscall2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../nexec" vcs="Git" />
   </component>
 </project>
 
