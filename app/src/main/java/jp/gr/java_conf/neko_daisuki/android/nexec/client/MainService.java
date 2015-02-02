@@ -725,8 +725,15 @@ public class MainService extends Service {
             }
             catch (IOException e) {
                 e.printStackTrace();
+
                 String fmt = "failed to read session parameter: %s: %s";
-                showToast(String.format(fmt, sessionId, e.getMessage()));
+                String msg = String.format(fmt, sessionId, e.getMessage());
+                try {
+                    callback.error(msg);
+                }
+                catch (RemoteException e1) {
+                    e1.printStackTrace();
+                }
                 return;
             }
             if (!removeSessionFile(sessionId)) {
