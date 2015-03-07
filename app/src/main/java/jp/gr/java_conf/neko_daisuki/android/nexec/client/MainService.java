@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -40,7 +41,6 @@ import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Slave;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.SocketCore;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
-import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient.Environment;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
 
 public class MainService extends Service {
@@ -374,13 +374,17 @@ public class MainService extends Service {
                 }
 
                 mNexecClient = new NexecClient();
+                File storage = Environment.getExternalStorageDirectory();
+                String currentDirectory = storage.getAbsolutePath();
                 int xWidth = mSessionParameter.xWidth;
                 int xHeight = mSessionParameter.xHeight;
                 SlaveListener listener = new SlaveListener(xWidth, xHeight);
                 try {
                     int exitCode = mNexecClient.run(
                             mSessionParameter.host, mSessionParameter.port,
-                            mSessionParameter.args, mStdin, mStdout, mStderr,
+                            mSessionParameter.args,
+                            currentDirectory,
+                            mStdin, mStdout, mStderr,
                             mSessionParameter.env, perm,
                             mSessionParameter.links, listener);
                     mCallback.exit(exitCode);
@@ -478,7 +482,7 @@ public class MainService extends Service {
             public String host = "";
             public int port;
             public String[] args = new String[0];
-            public Environment env;
+            public NexecClient.Environment env;
             public String[] files = new String[0];
             public Links links;
             public int xWidth;
@@ -662,8 +666,8 @@ public class MainService extends Service {
             return list.toArray(new String[0]);
         }
 
-        private Environment readEnvironment(JsonReader reader) throws IOException {
-            Environment env = new Environment();
+        private NexecClient.Environment readEnvironment(JsonReader reader) throws IOException {
+            NexecClient.Environment env = new NexecClient.Environment();
 
             reader.beginArray();
             while (reader.hasNext()) {
