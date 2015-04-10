@@ -728,16 +728,10 @@ public class MainService extends Service {
                 param = readSessionParameter(sessionId);
             }
             catch (IOException e) {
+                // The sessionId must be invalid. Ignore it.
+                String fmt = "failed to read session parameter (invalid id?): %s: %s";
+                Log.e(LOG_TAG, String.format(fmt, sessionId, e.getMessage()));
                 e.printStackTrace();
-
-                String fmt = "failed to read session parameter: %s: %s";
-                String msg = String.format(fmt, sessionId, e.getMessage());
-                try {
-                    callback.error(msg);
-                }
-                catch (RemoteException e1) {
-                    e1.printStackTrace();
-                }
                 return;
             }
             if (!removeSessionFile(sessionId)) {
