@@ -730,7 +730,7 @@ public class MainService extends Service {
             catch (IOException e) {
                 // The sessionId must be invalid. Ignore it.
                 String fmt = "failed to read session parameter (invalid id?): %s: %s";
-                Log.e(LOG_TAG, String.format(fmt, sessionId, e.getMessage()));
+                Log.w(LOG_TAG, String.format(fmt, sessionId, e.getMessage()));
                 e.printStackTrace();
                 return;
             }
