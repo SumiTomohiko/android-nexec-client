@@ -379,52 +379,99 @@ public class MainService extends Service {
                 int xWidth = mSessionParameter.xWidth;
                 int xHeight = mSessionParameter.xHeight;
                 SlaveListener listener = new SlaveListener(xWidth, xHeight);
+
+                String sessionPath = String.format("%s/%s", getFilesDir(),
+                                                   mSession.getSessionId());
+                String resourcePath = String.format("%s/resources",
+                                                    sessionPath);
+                if (!new File(resourcePath).mkdirs()) {
+                    String fmt = "cannot make directory: %s";
+                    handleError(String.format(fmt, resourcePath));
+                    return;
+                }
                 try {
-                    int exitCode = mNexecClient.run(
-                            mSessionParameter.host, mSessionParameter.port,
-                            mSessionParameter.args,
-                            currentDirectory,
-                            mStdin, mStdout, mStderr,
-                            mSessionParameter.env, perm,
-                            mSessionParameter.links, listener);
-                    mCallback.exit(exitCode);
+                    try {
+                        int exitCode = mNexecClient.run(
+                                mSessionParameter.host, mSessionParameter.port,
+                                mSessionParameter.args,
+                                currentDirectory,
+                                mStdin, mStdout, mStderr,
+                                mSessionParameter.env, perm,
+                                mSessionParameter.links, listener,
+                                resourcePath);
+                        mCallback.exit(exitCode);
+                    }
+                    catch (ProtocolException e) {
+                        handleException("protocol error", e);
+                    }
+                    catch (InterruptedException e) {
+                        handleException("interrupted", e);
+                    }
+                    catch (IOException e) {
+                        handleException("I/O error", e);
+                    }
+                    catch (RemoteException e) {
+                        handleException("socket error", e);
+                    }
                 }
-                catch (ProtocolException e) {
-                    handleException("protocol error", e);
-                }
-                catch (InterruptedException e) {
-                    handleException("interrupted", e);
-                }
-                catch (IOException e) {
-                    handleException("I/O error", e);
-                }
-                catch (RemoteException e) {
-                    handleException("socket error", e);
+                finally {
+                    deleteDirectory(new File(sessionPath));
                 }
             }
 
-            private void handleException(String msg, Exception e) {
+            private void deleteDirectory(File dir) {
+                File children[] = dir.listFiles();
+                int nChildren = children.length;
+                for (int i = 0; i < nChildren; i++) {
+                    File child = children[i];
+                    if (child.isDirectory()) {
+                        deleteDirectory(child);
+                        continue;
+                    }
+                    child.delete();
+                }
+                dir.delete();
+            }
+
+            private void handleError(String message) {
+                handleError(message, message);
+            }
+
+            private void handleError(String message, String toastMessage) {
                 try {
-                    mCallback.error(msg);
+                    mCallback.error(message);
                 }
                 catch (RemoteException e1) {
                 }
                 setCallback(null);
+
+                mHandler.post(new ExceptionProcessor(toastMessage));
+            }
+
+            private void handleException(String msg, Exception e) {
                 e.printStackTrace();
 
                 String fmt = "nexec service: %s: %s: %s";
                 String name = e.getClass().getName();
-                String s = String.format(fmt, msg, name, e.getMessage());
-                mHandler.post(new ExceptionProcessor(s));
+                handleError(msg, String.format(fmt, msg, name, e.getMessage()));
             }
         }
 
         private class Session {
 
+            private SessionId mSessionId;
             private Task mTask;
             private XServer mXServer;
             private Bitmap mBitmap;
             private Canvas mCanvas;
+
+            public Session(SessionId sessionId) {
+                mSessionId = sessionId;
+            }
+
+            public SessionId getSessionId() {
+                return mSessionId;
+            }
 
             public void setTask(Task task) {
                 mTask = task;
@@ -738,7 +785,7 @@ public class MainService extends Service {
                 return;
             }
 
-            Session session = new Session();
+            Session session = new Session(sessionId);
             Task task = new Task(param, session);
             task.setCallback(callback);
             task.execute();
