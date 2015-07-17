@@ -300,6 +300,11 @@ public class MainService extends Service {
                         return null;
                     }
 
+                    String fmt = "connecting with X: domain=%d, type=%d, protocol=%d, sockaddr=%s";
+                    String log = String.format(fmt, domain, type, protocol,
+                                               sockaddr);
+                    Log.d(LOG_TAG, log);
+
                     Pipe serverToClientPipe;
                     Pipe clientToServerPipe;
                     try {
