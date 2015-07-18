@@ -338,6 +338,8 @@ public class MainService extends Service {
                 }
             }
 
+            private static final String DIRECTORY_CONTENTS_MARK = "/**";
+
             private SessionParameter mSessionParameter;
             private Session mSession;
             private NexecClient mNexecClient;
@@ -375,6 +377,12 @@ public class MainService extends Service {
             private void run() {
                 Permissions perm = new Permissions();
                 for (String path: mSessionParameter.files) {
+                    if (path.endsWith(DIRECTORY_CONTENTS_MARK)) {
+                        int markLen = DIRECTORY_CONTENTS_MARK.length();
+                        int dirLen = path.length() - markLen;
+                        perm.allowDirectoryContents(path.substring(0, dirLen));
+                        continue;
+                    }
                     perm.allowPath(path);
                 }
 
