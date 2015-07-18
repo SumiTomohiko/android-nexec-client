@@ -775,7 +775,12 @@ public class MainService extends Service {
                 }
                 reader.endObject();
 
-                links.put(dest, src);
+                try {
+                    links.put(dest, src);
+                }
+                catch (Links.NotAbsolutePathException unused) {
+                    // TODO: ???
+                }
             }
             reader.endArray();
 
