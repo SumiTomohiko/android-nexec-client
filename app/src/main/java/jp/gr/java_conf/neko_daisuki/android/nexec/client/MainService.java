@@ -40,6 +40,7 @@ import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Links;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Slave;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.SocketCore;
+import jp.gr.java_conf.neko_daisuki.fsyscall.util.NormalizedPath;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
 
@@ -370,25 +371,34 @@ public class MainService extends Service {
             }
 
             protected Void doInBackground(Void... params) {
-                run();
+                try {
+                    run();
+                }
+                catch (NormalizedPath.InvalidPathException e) {
+                    Log.e(LOG_TAG, e.getMessage());
+                    e.printStackTrace();
+                }
                 return null;
             }
 
-            private void run() {
+            private void run() throws NormalizedPath.InvalidPathException {
                 Permissions perm = new Permissions();
                 for (String path: mSessionParameter.files) {
                     if (path.endsWith(DIRECTORY_CONTENTS_MARK)) {
                         int markLen = DIRECTORY_CONTENTS_MARK.length();
                         int dirLen = path.length() - markLen;
-                        perm.allowDirectoryContents(path.substring(0, dirLen));
+                        String s = path.substring(0, dirLen);
+                        NormalizedPath dirPath = new NormalizedPath(s);
+                        perm.allowDirectoryContents(dirPath);
                         continue;
                     }
-                    perm.allowPath(path);
+                    perm.allowPath(new NormalizedPath(path));
                 }
 
                 mNexecClient = new NexecClient();
                 File storage = Environment.getExternalStorageDirectory();
-                String currentDirectory = storage.getAbsolutePath();
+                String path = storage.getAbsolutePath();
+                NormalizedPath currentDirectory = new NormalizedPath(path);
                 int xWidth = mSessionParameter.xWidth;
                 int xHeight = mSessionParameter.xHeight;
                 SlaveListener listener = new SlaveListener(xWidth, xHeight);
@@ -671,7 +681,7 @@ public class MainService extends Service {
             return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
         }
 
-        private SessionParameter readSessionParameter(SessionId sessionId) throws IOException {
+        private SessionParameter readSessionParameter(SessionId sessionId) throws IOException, NormalizedPath.InvalidPathException {
             SessionParameter param = new SessionParameter();
 
             JsonReader reader = new JsonReader(
@@ -755,7 +765,7 @@ public class MainService extends Service {
             return env;
         }
 
-        private Links readLinks(JsonReader reader) throws IOException {
+        private Links readLinks(JsonReader reader) throws IOException, NormalizedPath.InvalidPathException {
             Links links = new Links();
 
             reader.beginArray();
@@ -775,12 +785,7 @@ public class MainService extends Service {
                 }
                 reader.endObject();
 
-                try {
-                    links.put(dest, src);
-                }
-                catch (Links.NotAbsolutePathException unused) {
-                    // TODO: ???
-                }
+                links.put(new NormalizedPath(dest), new NormalizedPath(src));
             }
             reader.endArray();
 
@@ -796,6 +801,11 @@ public class MainService extends Service {
                 // The sessionId must be invalid. Ignore it.
                 String fmt = "failed to read session parameter (invalid id?): %s: %s";
                 Log.w(LOG_TAG, String.format(fmt, sessionId, e.getMessage()));
+                e.printStackTrace();
+                return;
+            }
+            catch (NormalizedPath.InvalidPathException e) {
+                Log.e(LOG_TAG, e.getMessage());
                 e.printStackTrace();
                 return;
             }
