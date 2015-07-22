@@ -154,8 +154,6 @@ public class Client extends Thread {
 
 	/**
 	 * Remove a resource from the client's list.
-	 *
-	 * @param id	The resource ID.
 	 */
 	public synchronized void
 	freeResource (
