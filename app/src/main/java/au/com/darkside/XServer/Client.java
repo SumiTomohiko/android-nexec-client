@@ -169,6 +169,8 @@ public class Client extends Thread {
 	 */
 	public void
 	run () {
+        Log.i(LOG_TAG, String.format("%s: a new client started.", getName()));
+
 		try {
 			doComms ();
 		} catch (IOException e) {
@@ -313,9 +315,10 @@ public class Client extends Thread {
 			}
 
 			synchronized (_xServer) {
-			    String fmt = "request: opcode=%s (%d), bytesRemaining=%d";
-			    String name = RequestCode.toString(opcode);
-			    String msg = String.format(fmt, name, opcode, bytesRemaining);
+			    String fmt = "%s: request: opcode=%s (%d), bytesRemaining=%d";
+			    String msg = String.format(fmt, getName(),
+                                           RequestCode.toString(opcode), opcode,
+                                           bytesRemaining);
 			    Log.i(LOG_TAG, msg);
 				processRequest (opcode, arg, bytesRemaining);
 			}
