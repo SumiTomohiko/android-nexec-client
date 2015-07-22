@@ -272,32 +272,17 @@ public class MainService extends Service {
                     }
                 }
 
-                private class ScreenListener implements XScreenListener {
-
-                    @Override
-                    public void onPostInvalidate(int left, int top, int right,
-                                                 int bottom) {
-                        try {
-                            mCallback.xInvalidate(left, top, right, bottom);
-                        }
-                        catch (RemoteException e) {
-                            handleException("postInvalidate", e);
-                        }
-                    }
-                }
-
-                private int mXWidth;
-                private int mXHeight;
-
-                public SlaveListener(int xWidth, int xHeight) {
-                    mXWidth = xWidth;
-                    mXHeight = xHeight;
-                }
-
                 @Override
                 public SocketCore onConnect(int domain, int type, int protocol,
                                             SocketAddress sockaddr) {
-                    if ((domain != Unix.Constants.PF_LOCAL) || !(sockaddr instanceof UnixDomainAddress)) {
+                    if (domain != Unix.Constants.PF_LOCAL) {
+                        return null;
+                    }
+                    if (!(sockaddr instanceof UnixDomainAddress)) {
+                        return null;
+                    }
+                    XServer xServer = mSession.getXServer();
+                    if (xServer == null) {
                         return null;
                     }
 
@@ -317,25 +302,31 @@ public class MainService extends Service {
                         return null;
                     }
 
-                    startX(clientToServerPipe, serverToClientPipe);
+                    connectToX(xServer, clientToServerPipe, serverToClientPipe);
 
                     return new Socket(serverToClientPipe, clientToServerPipe);
                 }
 
-                private void startX(Pipe clientToServerPipe,
-                                    Pipe serverToClientPipe) {
-                    ScreenListener listener = new ScreenListener();
-                    XServer xServer = new XServer(MainService.this, mXWidth,
-                                                  mXHeight, listener);
+                private void connectToX(XServer xServer,
+                                        Pipe clientToServerPipe,
+                                        Pipe serverToClientPipe) {
                     InputStream in = clientToServerPipe.getInputStream();
                     OutputStream out = serverToClientPipe.getOutputStream();
-                    xServer.start(in, out);
-                    mSession.setXServer(xServer);
+                    xServer.connect(in, out);
+                }
+            }
 
-                    Bitmap.Config config = Bitmap.Config.ARGB_8888;
-                    Bitmap bitmap = Bitmap.createBitmap(mXWidth, mXHeight,
-                                                        config);
-                    mSession.setBitmap(bitmap);
+            private class ScreenListener implements XScreenListener {
+
+                @Override
+                public void onPostInvalidate(int left, int top, int right,
+                                             int bottom) {
+                    try {
+                        mCallback.xInvalidate(left, top, right, bottom);
+                    }
+                    catch (RemoteException e) {
+                        handleException("postInvalidate", e);
+                    }
                 }
             }
 
@@ -382,6 +373,20 @@ public class MainService extends Service {
             }
 
             private void run() throws NormalizedPath.InvalidPathException {
+                if (mSessionParameter.x) {
+                    int xWidth = mSessionParameter.xWidth;
+                    int xHeight = mSessionParameter.xHeight;
+                    XScreenListener listener = new ScreenListener();
+                    XServer xServer = new XServer(MainService.this, xWidth,
+                                                  xHeight, listener);
+                    mSession.setXServer(xServer);
+
+                    Bitmap.Config config = Bitmap.Config.ARGB_8888;
+                    Bitmap bitmap = Bitmap.createBitmap(xWidth, xHeight,
+                                                        config);
+                    mSession.setBitmap(bitmap);
+                }
+
                 Permissions perm = new Permissions();
                 for (String path: mSessionParameter.files) {
                     if (path.endsWith(DIRECTORY_CONTENTS_MARK)) {
@@ -399,9 +404,7 @@ public class MainService extends Service {
                 File storage = Environment.getExternalStorageDirectory();
                 String path = storage.getAbsolutePath();
                 NormalizedPath currentDirectory = new NormalizedPath(path);
-                int xWidth = mSessionParameter.xWidth;
-                int xHeight = mSessionParameter.xHeight;
-                SlaveListener listener = new SlaveListener(xWidth, xHeight);
+                SlaveListener listener = new SlaveListener();
 
                 String sessionPath = String.format("%s/%s", getFilesDir(),
                                                    mSession.getSessionId());
@@ -555,6 +558,7 @@ public class MainService extends Service {
             public NexecClient.Environment env;
             public String[] files = new String[0];
             public Links links;
+            public boolean x;
             public int xWidth;
             public int xHeight;
         }
@@ -707,6 +711,9 @@ public class MainService extends Service {
                     }
                     else if (name.equals("links")) {
                         param.links = readLinks(reader);
+                    }
+                    else if (name.equals("x")) {
+                        param.x = reader.nextBoolean();
                     }
                     else if (name.equals("x_width")) {
                         param.xWidth = reader.nextInt();

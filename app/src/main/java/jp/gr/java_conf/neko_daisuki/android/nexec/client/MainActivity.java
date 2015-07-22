@@ -271,18 +271,21 @@ public class MainActivity extends Activity {
         private Environment[] mEnv;
         private String[] mFiles;
         private Link[] mLinks;
+        private boolean mX;
         private int mXWidth;
         private int mXHeight;
 
         public OkButtonOnClickListener(String host, int port, String[] args,
                                        Environment[] env, String[] files,
-                                       Link[] links, int xWidth, int xHeight) {
+                                       Link[] links, boolean x, int xWidth,
+                                       int xHeight) {
             mHost = host;
             mPort = port;
             mArgs = args;
             mEnv = env;
             mFiles = files;
             mLinks = links;
+            mX = x;
             mXWidth = xWidth;
             mXHeight = xHeight;
         }
@@ -387,6 +390,7 @@ public class MainActivity extends Activity {
                 writeEnvironmentArray(writer, "env", mEnv);
                 writeStringArray(writer, "files", mFiles);
                 writeLinkArray(writer, "links", mLinks);
+                writer.name("x").value(mX);
                 writer.name("x_width").value(mXWidth);
                 writer.name("x_height").value(mXHeight);
                 writer.endObject();
@@ -441,6 +445,7 @@ public class MainActivity extends Activity {
         Environment[] env = getEnvironments(intent);
         String[] files = intent.getStringArrayExtra("FILES");
         Link[] links = parseLinks(intent.getStringArrayExtra("LINKS"));
+        boolean x = intent.getBooleanExtra("X", false);
         int xWidth = intent.getIntExtra("X_WIDTH", 0);
         int xHeight = intent.getIntExtra("X_HEIGHT", 0);
 
@@ -449,9 +454,16 @@ public class MainActivity extends Activity {
                 new PrivatePagerAdapter(host, port, args, env, files, links));
 
         Button okButton = (Button)findViewById(R.id.ok_button);
-        okButton.setOnClickListener(
-                new OkButtonOnClickListener(
-                        host, port, args, env, files, links, xWidth, xHeight));
+        OnClickListener okButtonListener = new OkButtonOnClickListener(host,
+                                                                       port,
+                                                                       args,
+                                                                       env,
+                                                                       files,
+                                                                       links,
+                                                                       x,
+                                                                       xWidth,
+                                                                       xHeight);
+        okButton.setOnClickListener(okButtonListener);
         Button cancelButton = (Button)findViewById(R.id.cancel_button);
         cancelButton.setOnClickListener(new CancelButtonOnClickListener());
     }

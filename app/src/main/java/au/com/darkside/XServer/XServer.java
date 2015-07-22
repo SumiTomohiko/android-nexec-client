@@ -187,7 +187,7 @@ public class XServer {
 		return true;
 	}
 
-	public synchronized void start(InputStream in, OutputStream out) {
+	public synchronized void connect(InputStream in, OutputStream out) {
 	    Client c;
 	    try {
 	        c = new Client(this, in, out, _clientIdBase, _clientIdStep - 1);
