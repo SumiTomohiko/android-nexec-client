@@ -278,7 +278,14 @@ public class MainService extends Service {
                     if (domain != Unix.Constants.PF_LOCAL) {
                         return null;
                     }
-                    if (!(sockaddr instanceof UnixDomainAddress)) {
+                    UnixDomainAddress addr;
+                    try {
+                        addr = (UnixDomainAddress)sockaddr;
+                    }
+                    catch (ClassCastException unused) {
+                        return null;
+                    }
+                    if (!"/tmp/.X11-unix/X0".equals(addr.getPath())) {
                         return null;
                     }
                     XServer xServer = mSession.getXServer();
