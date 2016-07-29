@@ -250,6 +250,7 @@ public class MainService extends Service {
 
                     private AlarmPipe mServerToClientPipe;
                     private Pipe mClientToServerPipe;
+                    private boolean mClosed = false;
 
                     public Socket(AlarmPipe serverToClientPipe,
                                   Pipe clientToServerPipe) {
@@ -262,6 +263,7 @@ public class MainService extends Service {
                         mServerToClientPipe.getOutputStream().close();
                         mServerToClientPipe.getInputStream().close();
                         mClientToServerPipe.close();
+                        mClosed = true;
                     }
 
                     @Override
@@ -272,6 +274,11 @@ public class MainService extends Service {
                     @Override
                     public OutputStream getOutputStream() {
                         return mClientToServerPipe.getOutputStream();
+                    }
+
+                    @Override
+                    public boolean isDisconnected() {
+                        return mClosed;
                     }
                 }
 
