@@ -32,10 +32,12 @@ import au.com.darkside.XServer.XServer;
 import jp.gr.java_conf.neko_daisuki.android.nexec.client.share.INexecCallback;
 import jp.gr.java_conf.neko_daisuki.android.nexec.client.share.INexecService;
 import jp.gr.java_conf.neko_daisuki.android.nexec.client.share.SessionId;
+import jp.gr.java_conf.neko_daisuki.android.nexec.client.util.AlarmPipe;
 import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
 import jp.gr.java_conf.neko_daisuki.fsyscall.SocketAddress;
 import jp.gr.java_conf.neko_daisuki.fsyscall.Unix;
 import jp.gr.java_conf.neko_daisuki.fsyscall.UnixDomainAddress;
+import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Alarm;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Links;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Slave;
@@ -246,10 +248,10 @@ public class MainService extends Service {
 
                 private class Socket implements SocketCore {
 
-                    private Pipe mServerToClientPipe;
+                    private AlarmPipe mServerToClientPipe;
                     private Pipe mClientToServerPipe;
 
-                    public Socket(Pipe serverToClientPipe,
+                    public Socket(AlarmPipe serverToClientPipe,
                                   Pipe clientToServerPipe) {
                         mServerToClientPipe = serverToClientPipe;
                         mClientToServerPipe = clientToServerPipe;
@@ -257,7 +259,8 @@ public class MainService extends Service {
 
                     @Override
                     public void close() throws IOException {
-                        mServerToClientPipe.close();
+                        mServerToClientPipe.getOutputStream().close();
+                        mServerToClientPipe.getInputStream().close();
                         mClientToServerPipe.close();
                     }
 
@@ -274,7 +277,8 @@ public class MainService extends Service {
 
                 @Override
                 public SocketCore onConnect(int domain, int type, int protocol,
-                                            SocketAddress sockaddr) {
+                                            SocketAddress sockaddr,
+                                            Alarm alarm) {
                     if (domain != Unix.Constants.PF_LOCAL) {
                         return null;
                     }
@@ -298,10 +302,10 @@ public class MainService extends Service {
                                                sockaddr);
                     Log.d(LOG_TAG, log);
 
-                    Pipe serverToClientPipe;
+                    AlarmPipe serverToClientPipe;
                     Pipe clientToServerPipe;
                     try {
-                        serverToClientPipe = new Pipe();
+                        serverToClientPipe = new AlarmPipe(alarm);
                         clientToServerPipe = new Pipe();
                     }
                     catch (IOException e) {
@@ -316,7 +320,7 @@ public class MainService extends Service {
 
                 private void connectToX(XServer xServer,
                                         Pipe clientToServerPipe,
-                                        Pipe serverToClientPipe) {
+                                        AlarmPipe serverToClientPipe) {
                     InputStream in = clientToServerPipe.getInputStream();
                     OutputStream out = serverToClientPipe.getOutputStream();
                     xServer.connect(in, out);
