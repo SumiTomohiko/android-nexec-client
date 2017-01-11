@@ -7,6 +7,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +29,8 @@ import android.os.RemoteException;
 import android.util.JsonReader;
 import android.util.Log;
 import android.widget.Toast;
+
+import javax.net.ssl.SSLContext;
 
 import au.com.darkside.XServer.ScreenView;
 import au.com.darkside.XServer.XScreenListener;
@@ -43,6 +50,7 @@ import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Slave;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.SocketCore;
 import jp.gr.java_conf.neko_daisuki.fsyscall.util.NormalizedPath;
+import jp.gr.java_conf.neko_daisuki.fsyscall.util.SSLUtil;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
 
@@ -383,6 +391,14 @@ public class MainService extends Service {
                 try {
                     run();
                 }
+                catch (IOException e) {
+                    Log.e(LOG_TAG, e.getMessage());
+                    e.printStackTrace();
+                }
+                catch (GeneralSecurityException e) {
+                    Log.e(LOG_TAG, e.getMessage());
+                    e.printStackTrace();
+                }
                 catch (NormalizedPath.InvalidPathException e) {
                     Log.e(LOG_TAG, e.getMessage());
                     e.printStackTrace();
@@ -390,7 +406,12 @@ public class MainService extends Service {
                 return null;
             }
 
-            private void run() throws NormalizedPath.InvalidPathException {
+            private void run() throws CertificateException,
+                                      IOException,
+                                      KeyManagementException,
+                                      KeyStoreException,
+                                      NoSuchAlgorithmException,
+                                      NormalizedPath.InvalidPathException {
                 if (mSessionParameter.x) {
                     int xWidth = mSessionParameter.xWidth;
                     int xHeight = mSessionParameter.xHeight;
@@ -424,42 +445,51 @@ public class MainService extends Service {
                 NormalizedPath currentDirectory = new NormalizedPath(path);
                 SlaveListener listener = new SlaveListener();
 
-                String sessionPath = String.format("%s/%s", getFilesDir(),
-                                                   mSession.getSessionId());
-                String resourcePath = String.format("%s/resources",
-                                                    sessionPath);
-                if (!new File(resourcePath).mkdirs()) {
-                    String fmt = "cannot make directory: %s";
-                    handleError(String.format(fmt, resourcePath));
-                    return;
-                }
+                InputStream in = getAssets().open("cacerts.bks");
                 try {
+                    SSLContext context = SSLUtil.createContext("BKS", in,
+                                                               "hogehoge");
+
+                    String sessionPath = String.format("%s/%s", getFilesDir(),
+                                                       mSession.getSessionId());
+                    String resourcePath = String.format("%s/resources",
+                                                        sessionPath);
+                    if (!new File(resourcePath).mkdirs()) {
+                        String fmt = "cannot make directory: %s";
+                        handleError(String.format(fmt, resourcePath));
+                        return;
+                    }
                     try {
-                        int exitCode = mNexecClient.run(
-                                mSessionParameter.host, mSessionParameter.port,
-                                mSessionParameter.args,
-                                currentDirectory,
-                                mStdin, mStdout, mStderr,
-                                mSessionParameter.env, perm,
-                                mSessionParameter.links, listener,
-                                resourcePath);
-                        mCallback.exit(exitCode);
+                        try {
+                            int exitCode = mNexecClient.run(
+                                    mSessionParameter.host, mSessionParameter.port,
+                                    context, "anonymous", "anonymous",
+                                    mSessionParameter.args, currentDirectory,
+                                    mStdin, mStdout, mStderr,
+                                    mSessionParameter.env, perm,
+                                    mSessionParameter.links, listener,
+                                    resourcePath);
+                            mCallback.exit(exitCode);
+                        }
+                        catch (ProtocolException e) {
+                            handleException("protocol error", e);
+                        }
+                        catch (InterruptedException e) {
+                            handleException("interrupted", e);
+                        }
+                        catch (IOException e) {
+                            handleException("I/O error", e);
+                        }
+                        catch (RemoteException e) {
+                            handleException("socket error", e);
+                        }
                     }
-                    catch (ProtocolException e) {
-                        handleException("protocol error", e);
-                    }
-                    catch (InterruptedException e) {
-                        handleException("interrupted", e);
-                    }
-                    catch (IOException e) {
-                        handleException("I/O error", e);
-                    }
-                    catch (RemoteException e) {
-                        handleException("socket error", e);
+                    finally {
+                        deleteDirectory(new File(sessionPath));
                     }
                 }
                 finally {
-                    deleteDirectory(new File(sessionPath));
+                    in.close();
                 }
             }
 
