@@ -256,32 +256,30 @@ public class MainService extends Service {
 
                 private class Socket implements SocketCore {
 
-                    private AlarmPipe mServerToClientPipe;
-                    private Pipe mClientToServerPipe;
+                    private InputStream mIn;
+                    private OutputStream mOut;
                     private boolean mClosed = false;
 
-                    public Socket(AlarmPipe serverToClientPipe,
-                                  Pipe clientToServerPipe) {
-                        mServerToClientPipe = serverToClientPipe;
-                        mClientToServerPipe = clientToServerPipe;
+                    public Socket(InputStream in, OutputStream out) {
+                        mIn = in;
+                        mOut = out;
                     }
 
                     @Override
                     public void close() throws IOException {
-                        mServerToClientPipe.getOutputStream().close();
-                        mServerToClientPipe.getInputStream().close();
-                        mClientToServerPipe.close();
+                        mIn.close();
+                        mOut.close();
                         mClosed = true;
                     }
 
                     @Override
                     public InputStream getInputStream() {
-                        return mServerToClientPipe.getInputStream();
+                        return mIn;
                     }
 
                     @Override
                     public OutputStream getOutputStream() {
-                        return mClientToServerPipe.getOutputStream();
+                        return mOut;
                     }
 
                     @Override
@@ -330,7 +328,8 @@ public class MainService extends Service {
 
                     connectToX(xServer, clientToServerPipe, serverToClientPipe);
 
-                    return new Socket(serverToClientPipe, clientToServerPipe);
+                    return new Socket(serverToClientPipe.getInputStream(),
+                                      clientToServerPipe.getOutputStream());
                 }
 
                 private void connectToX(XServer xServer,
