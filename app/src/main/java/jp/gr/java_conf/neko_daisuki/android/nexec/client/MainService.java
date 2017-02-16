@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -44,6 +42,7 @@ import jp.gr.java_conf.neko_daisuki.fsyscall.SocketAddress;
 import jp.gr.java_conf.neko_daisuki.fsyscall.Unix;
 import jp.gr.java_conf.neko_daisuki.fsyscall.UnixDomainAddress;
 import jp.gr.java_conf.neko_daisuki.fsyscall.io.AlarmPipe;
+import jp.gr.java_conf.neko_daisuki.fsyscall.io.StreamPipe;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Alarm;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Links;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
@@ -227,33 +226,6 @@ public class MainService extends Service {
 
             private class SlaveListener implements Slave.Listener {
 
-                private class Pipe {
-
-                    private InputStream mInputStream;
-                    private OutputStream mOutputStream;
-
-                    public Pipe() throws IOException {
-                        PipedInputStream in = new PipedInputStream();
-                        PipedOutputStream out = new PipedOutputStream();
-                        in.connect(out);
-                        mInputStream = in;
-                        mOutputStream = out;
-                    }
-
-                    public InputStream getInputStream() {
-                        return mInputStream;
-                    }
-
-                    public OutputStream getOutputStream() {
-                        return mOutputStream;
-                    }
-
-                    public void close() throws IOException {
-                        mInputStream.close();
-                        mOutputStream.close();
-                    }
-                }
-
                 private class Socket implements SocketCore {
 
                     private InputStream mIn;
@@ -316,10 +288,10 @@ public class MainService extends Service {
                     Log.d(LOG_TAG, log);
 
                     AlarmPipe serverToClientPipe;
-                    Pipe clientToServerPipe;
+                    StreamPipe clientToServerPipe;
                     try {
                         serverToClientPipe = new AlarmPipe(alarm);
-                        clientToServerPipe = new Pipe();
+                        clientToServerPipe = new StreamPipe();
                     }
                     catch (IOException e) {
                         handleException("creating pipe", e);
@@ -333,7 +305,7 @@ public class MainService extends Service {
                 }
 
                 private void connectToX(XServer xServer,
-                                        Pipe clientToServerPipe,
+                                        StreamPipe clientToServerPipe,
                                         AlarmPipe serverToClientPipe) {
                     InputStream in = clientToServerPipe.getInputStream();
                     OutputStream out = serverToClientPipe.getOutputStream();

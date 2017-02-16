@@ -16,8 +16,8 @@ import java.net.Socket;
  * This class handles buffered bi-directional communications.
  */
 public class InputOutput {
-	private final BufferedInputStream	_inStream;
-	private final BufferedOutputStream	_outStream;
+	private final InputStream _inStream;
+	private final OutputStream _outStream;
 	private boolean						_msb = true;
 	private static final byte[]		PadBytes = new byte[] {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -37,8 +37,8 @@ public class InputOutput {
 	}
 
 	public InputOutput(InputStream in, OutputStream out) {
-		_inStream = new BufferedInputStream(in, 16384);
-		_outStream = new BufferedOutputStream(out, 16384);
+		_inStream = in;
+		_outStream = out;
 	}
 
 	/**
