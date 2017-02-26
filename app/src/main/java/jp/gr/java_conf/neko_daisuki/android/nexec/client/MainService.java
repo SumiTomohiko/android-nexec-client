@@ -494,11 +494,13 @@ public class MainService extends Service {
             }
 
             private void handleException(String msg, Exception e) {
-                e.printStackTrace();
-
                 String fmt = "nexec service: %s: %s: %s";
                 String name = e.getClass().getName();
-                handleError(msg, String.format(fmt, msg, name, e.getMessage()));
+                String s = String.format(fmt, msg, name, e.getMessage());
+                Log.e(LOG_TAG, s);
+                e.printStackTrace();
+
+                handleError(msg, s);
             }
         }
 
