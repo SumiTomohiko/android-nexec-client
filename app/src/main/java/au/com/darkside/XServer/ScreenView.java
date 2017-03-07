@@ -584,8 +584,9 @@ public class ScreenView {
 
 				updatePointer (1);
 			} else {
+                int timestamp = _xServer.getTimestamp();
 				Window		ew = w.buttonNotify (pressed, _motionX, _motionY,
-																button, null);
+												 button, timestamp, null);
 				Client		c = null;
 
 				if (pressed && ew != null) {
@@ -604,7 +605,7 @@ public class ScreenView {
 					_grabPointerWindow = ew;
 					_grabPointerPassive = false;
 					_grabPointerAutomatic = true;
-					_grabPointerTime = _xServer.getTimestamp ();
+					_grabPointerTime = timestamp;
 					_grabCursor = ew.getCursor ();
 					_grabConfineWindow = null;
 					_grabEventMask = em & EventCode.MaskAllPointer;
@@ -1447,7 +1448,7 @@ public class ScreenView {
 
 		if (time < _grabKeyboardTime || time > now) {
 			status = 2;	// Invalid time.
-		} else if (_grabKeyboardWindow != null) {
+		} else if ((_grabKeyboardWindow != null) && (_grabKeyboardClient != client)) {
 			status = 1;	// Already grabbed.
 		} else {
 			_grabKeyboardClient = client;
