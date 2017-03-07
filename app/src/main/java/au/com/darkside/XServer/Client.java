@@ -63,6 +63,7 @@ public class Client extends Thread {
 	private boolean					_closeConnection = false;
 	private boolean					_isConnected = true;
 	private int						_closeDownMode = Destroy;
+	private boolean					_imperviousToServerGrabs = false;
 
 	/**
 	 * Constructor.
@@ -141,6 +142,28 @@ public class Client extends Thread {
 	}
 
 	/**
+	 * Return whether the client is impervious to server grabs.
+	 *
+	 * @return	True if impervious.
+	 */
+	public boolean
+	getImperviousToServerGrabs () {
+		return _imperviousToServerGrabs;
+	}
+
+	/**
+	 * Set whether the client is impervious to server grabs.
+	 *
+	 * @param impervious	If true, the client is impervious.
+	 */
+	public void
+	setImperviousToServerGrabs (
+		boolean	impervious
+	) {
+		_imperviousToServerGrabs = impervious;
+	}
+
+	/**
 	 * Add to the client's list of resources.
 	 *
 	 * @param r	The resource to add.
@@ -154,6 +177,8 @@ public class Client extends Thread {
 
 	/**
 	 * Remove a resource from the client's list.
+	 *
+	 * @param id	The resource ID.
 	 */
 	public synchronized void
 	freeResource (
@@ -288,8 +313,7 @@ public class Client extends Thread {
 		_inputOutput.flush ();
 
 		while (!_closeConnection) {
-			int n = _inputOutput.readByte ();
-			byte	opcode = (byte)n;
+			byte	opcode = (byte) _inputOutput.readByte ();
 			byte	arg = (byte) _inputOutput.readByte ();
 			int		requestLength = _inputOutput.readShort ();
 			int		bytesRemaining;

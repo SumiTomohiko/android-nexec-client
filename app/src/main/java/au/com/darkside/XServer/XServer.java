@@ -107,6 +107,8 @@ public class XServer {
 		_extensions = new Hashtable<String, Extension>();
 		_extensions.put ("Generic Event Extension",
 						new Extension (Extensions.XGE, (byte) 0, (byte) 0));
+		_extensions.put ("XTEST",
+				new Extension (Extensions.XTEST, (byte) 0, (byte) 0));
 		_extensions.put ("BIG-REQUESTS",
 				new Extension (Extensions.BigRequests, (byte) 0, (byte) 0));
 		_extensions.put ("SHAPE", new Extension (Extensions.Shape,
@@ -210,13 +212,9 @@ public class XServer {
 			_acceptThread = null;
 		}
 
-		synchronized (this) {
-			for (Client c: _clients)
-				c.cancel ();
-	
-			_clients.clear ();
-			_grabClient = null;
-		}
+		_grabClient = null;
+		while (!_clients.isEmpty ())
+			_clients.get(0).cancel ();
 	}
 
 	/**
@@ -335,7 +333,8 @@ public class XServer {
 
 	/**
 	 * Return true if processing is allowed. This is only false if the
-	 * server has been grabbed by another client.
+	 * server has been grabbed by another client and the checking client
+	 * is not impervious to server grabs.
 	 *
 	 * @param client	The client checking if processing is allowed.
 	 *
@@ -345,7 +344,7 @@ public class XServer {
 	processingAllowed (
 		Client		client
 	) {
-		if (_grabClient == null)
+		if (_grabClient == null || client.getImperviousToServerGrabs ())
 			return true;
 
 		return _grabClient == client;

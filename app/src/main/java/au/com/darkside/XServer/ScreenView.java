@@ -157,6 +157,16 @@ public class ScreenView {
 	}
 
 	/**
+	 * Return the current cursor.
+	 *
+	 * @return	The current cursor.
+	 */
+	public Cursor
+	getCurrentCursor () {
+		return _currentCursor;
+	}
+
+	/**
 	 * Return the current pointer X coordinate.
 	 *
 	 * @return	The current pointer X coordinate.
@@ -524,7 +534,7 @@ public class ScreenView {
 	 * @param button	The button that was pressed/released.
 	 * @param pressed	True if the button was pressed.
 	 */
-	private void
+	public void
 	updatePointerButtons (
 		int			button,
 		boolean		pressed
@@ -650,7 +660,7 @@ public class ScreenView {
 	 * @param keycode	Keycode of the key.
 	 * @param pressed	True if pressed, false if released.
 	 */
-	private void
+	public void
 	notifyKeyPressedReleased (
 		int			keycode,
 		boolean		pressed
@@ -1552,11 +1562,11 @@ public class ScreenView {
 		_focusLastChangeTime = time;
 	}
 
-	private int getWidth() {
+	public int getWidth() {
 	    return mWidth;
 	}
 
-	private int getHeight() {
+	public int getHeight() {
 	    return mHeight;
 	}
 }
