@@ -118,10 +118,10 @@ public class MainActivity extends Activity {
             }
         }
 
-        private class LinkPageCreator extends PageCreator {
+        private class FileMappingPageCreator extends PageCreator {
 
             protected int getResourceId() {
-                return R.layout.page_link;
+                return R.layout.page_file_mapping;
             }
 
             protected void initializeView(View view) {
@@ -214,7 +214,7 @@ public class MainActivity extends Activity {
                 new Page(new CommandPageCreator(), "Command"),
                 new Page(new EnvPageCreator(), "Environment"),
                 new Page(new PermissionPageCreator(), "Permission"),
-                new Page(new LinkPageCreator(), "Redirection") };
+                new Page(new FileMappingPageCreator(), "File mapping") };
         }
 
         @Override
