@@ -44,12 +44,14 @@ import jp.gr.java_conf.neko_daisuki.fsyscall.UnixDomainAddress;
 import jp.gr.java_conf.neko_daisuki.fsyscall.io.AlarmPipe;
 import jp.gr.java_conf.neko_daisuki.fsyscall.io.StreamPipe;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Alarm;
-import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Links;
+import jp.gr.java_conf.neko_daisuki.fsyscall.slave.FileMap;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Permissions;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.Slave;
 import jp.gr.java_conf.neko_daisuki.fsyscall.slave.SocketCore;
-import jp.gr.java_conf.neko_daisuki.fsyscall.util.NormalizedPath;
+import jp.gr.java_conf.neko_daisuki.fsyscall.util.InvalidPathException;
+import jp.gr.java_conf.neko_daisuki.fsyscall.util.PhysicalPath;
 import jp.gr.java_conf.neko_daisuki.fsyscall.util.SSLUtil;
+import jp.gr.java_conf.neko_daisuki.fsyscall.util.VirtualPath;
 import jp.gr.java_conf.neko_daisuki.nexec.client.NexecClient;
 import jp.gr.java_conf.neko_daisuki.nexec.client.ProtocolException;
 
@@ -370,7 +372,7 @@ public class MainService extends Service {
                     Log.e(LOG_TAG, e.getMessage());
                     e.printStackTrace();
                 }
-                catch (NormalizedPath.InvalidPathException e) {
+                catch (InvalidPathException e) {
                     Log.e(LOG_TAG, e.getMessage());
                     e.printStackTrace();
                 }
@@ -382,7 +384,7 @@ public class MainService extends Service {
                                       KeyManagementException,
                                       KeyStoreException,
                                       NoSuchAlgorithmException,
-                                      NormalizedPath.InvalidPathException {
+                                      InvalidPathException {
                 if (mSessionParameter.x) {
                     int xWidth = mSessionParameter.xWidth;
                     int xHeight = mSessionParameter.xHeight;
@@ -403,17 +405,17 @@ public class MainService extends Service {
                         int markLen = DIRECTORY_CONTENTS_MARK.length();
                         int dirLen = path.length() - markLen;
                         String s = path.substring(0, dirLen);
-                        NormalizedPath dirPath = new NormalizedPath(s);
+                        PhysicalPath dirPath = new PhysicalPath(s);
                         perm.allowDirectoryContents(dirPath);
                         continue;
                     }
-                    perm.allowPath(new NormalizedPath(path));
+                    perm.allowPath(new PhysicalPath(path));
                 }
 
                 mNexecClient = new NexecClient();
                 File storage = Environment.getExternalStorageDirectory();
                 String path = storage.getAbsolutePath();
-                NormalizedPath currentDirectory = new NormalizedPath(path);
+                VirtualPath currentDirectory = new VirtualPath(path);
                 SlaveListener listener = new SlaveListener();
 
                 InputStream in = getAssets().open("cacerts.bks");
@@ -438,7 +440,7 @@ public class MainService extends Service {
                                     mSessionParameter.args, currentDirectory,
                                     mStdin, mStdout, mStderr,
                                     mSessionParameter.env, perm,
-                                    mSessionParameter.links, listener,
+                                    mSessionParameter.fileMap, listener,
                                     resourcePath);
                             mCallback.exit(exitCode);
                         }
@@ -578,7 +580,7 @@ public class MainService extends Service {
             public String[] args = new String[0];
             public NexecClient.Environment env;
             public String[] files = new String[0];
-            public Links links;
+            public FileMap fileMap;
             public boolean x;
             public int xWidth;
             public int xHeight;
@@ -706,7 +708,7 @@ public class MainService extends Service {
             return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
         }
 
-        private SessionParameter readSessionParameter(SessionId sessionId) throws IOException, NormalizedPath.InvalidPathException {
+        private SessionParameter readSessionParameter(SessionId sessionId) throws IOException, InvalidPathException {
             SessionParameter param = new SessionParameter();
 
             JsonReader reader = new JsonReader(
@@ -730,8 +732,8 @@ public class MainService extends Service {
                     else if (name.equals("files")) {
                         param.files = readArray(reader);
                     }
-                    else if (name.equals("links")) {
-                        param.links = readLinks(reader);
+                    else if (name.equals("file_map")) {
+                        param.fileMap = readFileMap(reader);
                     }
                     else if (name.equals("x")) {
                         param.x = reader.nextBoolean();
@@ -793,8 +795,8 @@ public class MainService extends Service {
             return env;
         }
 
-        private Links readLinks(JsonReader reader) throws IOException, NormalizedPath.InvalidPathException {
-            Links links = new Links();
+        private FileMap readFileMap(JsonReader reader) throws IOException, InvalidPathException {
+            FileMap fileMap = new FileMap();
 
             reader.beginArray();
             while (reader.hasNext()) {
@@ -813,11 +815,11 @@ public class MainService extends Service {
                 }
                 reader.endObject();
 
-                links.put(new NormalizedPath(dest), new NormalizedPath(src));
+                fileMap.put(new PhysicalPath(dest), new VirtualPath(src));
             }
             reader.endArray();
 
-            return links;
+            return fileMap;
         }
 
         private void startTask(SessionId sessionId, INexecCallback callback) {
@@ -832,7 +834,7 @@ public class MainService extends Service {
                 e.printStackTrace();
                 return;
             }
-            catch (NormalizedPath.InvalidPathException e) {
+            catch (InvalidPathException e) {
                 Log.e(LOG_TAG, e.getMessage());
                 e.printStackTrace();
                 return;

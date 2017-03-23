@@ -131,8 +131,8 @@ public class MainActivity extends Activity {
                 int id = android.R.layout.simple_list_item_1;
 
                 List<String> list = new ArrayList<String>();
-                for (Link link: mLinks) {
-                    list.add(String.format("%s -> %s", link.src, link.dest));
+                for (FileMap entry: mFileMap) {
+                    list.add(String.format("%s -> %s", entry.src, entry.dest));
                 }
 
                 Adapter adapter = new ArrayAdapter<String>(MainActivity.this,
@@ -194,18 +194,18 @@ public class MainActivity extends Activity {
         private String[] mArgs;
         private Environment[] mEnv;
         private String[] mFiles;
-        private Link[] mLinks;
+        private FileMap[] mFileMap;
 
         private LayoutInflater mInflater;
         private Page[] mPages;
 
-        public PrivatePagerAdapter(String host, int port, String[] args, Environment[] env, String[] files, Link[] links) {
+        public PrivatePagerAdapter(String host, int port, String[] args, Environment[] env, String[] files, FileMap[] fileMap) {
             mHost = host;
             mPort = port;
             mArgs = args;
             mEnv = env;
             mFiles = files;
-            mLinks = links;
+            mFileMap = fileMap;
 
             String key = Context.LAYOUT_INFLATER_SERVICE;
             mInflater = (LayoutInflater)getSystemService(key);
@@ -270,21 +270,21 @@ public class MainActivity extends Activity {
         private String[] mArgs;
         private Environment[] mEnv;
         private String[] mFiles;
-        private Link[] mLinks;
+        private FileMap[] mFileMap;
         private boolean mX;
         private int mXWidth;
         private int mXHeight;
 
         public OkButtonOnClickListener(String host, int port, String[] args,
                                        Environment[] env, String[] files,
-                                       Link[] links, boolean x, int xWidth,
+                                       FileMap[] fileMap, boolean x, int xWidth,
                                        int xHeight) {
             mHost = host;
             mPort = port;
             mArgs = args;
             mEnv = env;
             mFiles = files;
-            mLinks = links;
+            mFileMap = fileMap;
             mX = x;
             mXWidth = xWidth;
             mXHeight = xHeight;
@@ -357,13 +357,13 @@ public class MainActivity extends Activity {
             writer.endArray();
         }
 
-        private void writeLinkArray(JsonWriter writer, String name, Link[] links) throws IOException {
+        private void writeLinkArray(JsonWriter writer, String name, FileMap[] fileMap) throws IOException {
             writer.name(name);
             writer.beginArray();
-            for (Link link: links) {
+            for (FileMap entry: fileMap) {
                 writer.beginObject();
-                writer.name("dest").value(link.dest);
-                writer.name("src").value(link.src);
+                writer.name("dest").value(entry.dest);
+                writer.name("src").value(entry.src);
                 writer.endObject();
             }
             writer.endArray();
@@ -389,7 +389,7 @@ public class MainActivity extends Activity {
                 writeStringArray(writer, "args", mArgs);
                 writeEnvironmentArray(writer, "env", mEnv);
                 writeStringArray(writer, "files", mFiles);
-                writeLinkArray(writer, "links", mLinks);
+                writeLinkArray(writer, "file_map", mFileMap);
                 writer.name("x").value(mX);
                 writer.name("x_width").value(mXWidth);
                 writer.name("x_height").value(mXHeight);
@@ -420,12 +420,12 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static class Link {
+    private static class FileMap {
 
         public String dest;
         public String src;
 
-        public Link(String dest, String src) {
+        public FileMap(String dest, String src) {
             this.dest = dest;
             this.src = src;
         }
@@ -444,14 +444,14 @@ public class MainActivity extends Activity {
         String[] args = intent.getStringArrayExtra("ARGS");
         Environment[] env = getEnvironments(intent);
         String[] files = intent.getStringArrayExtra("FILES");
-        Link[] links = parseLinks(intent.getStringArrayExtra("LINKS"));
+        FileMap[] fileMap = parseFileMap(intent.getStringArrayExtra("FILE_MAP"));
         boolean x = intent.getBooleanExtra("X", false);
         int xWidth = intent.getIntExtra("X_WIDTH", 0);
         int xHeight = intent.getIntExtra("X_HEIGHT", 0);
 
         ViewPager pager = (ViewPager)findViewById(R.id.view_pager);
         pager.setAdapter(
-                new PrivatePagerAdapter(host, port, args, env, files, links));
+                new PrivatePagerAdapter(host, port, args, env, files, fileMap));
 
         Button okButton = (Button)findViewById(R.id.ok_button);
         OnClickListener okButtonListener = new OkButtonOnClickListener(host,
@@ -459,7 +459,7 @@ public class MainActivity extends Activity {
                                                                        args,
                                                                        env,
                                                                        files,
-                                                                       links,
+                                                                       fileMap,
                                                                        x,
                                                                        xWidth,
                                                                        xHeight);
@@ -486,17 +486,17 @@ public class MainActivity extends Activity {
         return new String[] { buffer.toString(), buffer2.toString() };
     }
 
-    private Link parseLink(String s) {
+    private FileMap parseFileMapEntry(String s) {
         String[] fields = splitFields(s);
-        return new Link(fields[0], fields[1]);
+        return new FileMap(fields[0], fields[1]);
     }
 
-    private Link[] parseLinks(String[] links) {
-        List<Link> l = new LinkedList<Link>();
+    private FileMap[] parseFileMap(String[] links) {
+        List<FileMap> l = new LinkedList<FileMap>();
         for (String link: links) {
-            l.add(parseLink(link));
+            l.add(parseFileMapEntry(link));
         }
-        return l.toArray(new Link[0]);
+        return l.toArray(new FileMap[0]);
     }
 
     private void showToast(String message) {
