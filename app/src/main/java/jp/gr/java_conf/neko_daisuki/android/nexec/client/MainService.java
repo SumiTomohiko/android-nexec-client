@@ -590,14 +590,14 @@ public class MainService extends Service {
 
         @Override
         public void execute(SessionId sessionId, INexecCallback callback) throws RemoteException {
-            Log.i(LOG_TAG, String.format("execute: %s", sessionId));
+            Log.i(LOG_TAG, String.format("execute: sessionId=%s", sessionId));
             startTask(sessionId, callback);
         }
 
         @Override
         public void connect(SessionId sessionId, INexecCallback callback)
                 throws RemoteException {
-            Log.i(LOG_TAG, String.format("connect: %s", sessionId));
+            Log.i(LOG_TAG, String.format("connect: sessionId=%s", sessionId));
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -608,7 +608,8 @@ public class MainService extends Service {
 
         @Override
         public void disconnect(SessionId sessionId) throws RemoteException {
-            Log.i(LOG_TAG, String.format("disconnected: %s", sessionId));
+            Log.i(LOG_TAG,
+                  String.format("disconnect: sessionId=%s", sessionId));
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -619,7 +620,7 @@ public class MainService extends Service {
 
         @Override
         public void quit(SessionId sessionId) throws RemoteException {
-            Log.i(LOG_TAG, String.format("quit: %s", sessionId));
+            Log.i(LOG_TAG, String.format("quit: sessionId=%s", sessionId));
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -635,7 +636,7 @@ public class MainService extends Service {
 
         @Override
         public Bitmap xDraw(SessionId sessionId) throws RemoteException {
-            Log.i(LOG_TAG, String.format("xDraw: %s", sessionId));
+            Log.i(LOG_TAG, String.format("xDraw: sessionId=%s", sessionId));
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return createBlankBitmap();
