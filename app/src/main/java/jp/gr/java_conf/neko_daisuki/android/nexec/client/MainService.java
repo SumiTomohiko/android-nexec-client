@@ -59,6 +59,8 @@ public class MainService extends Service {
 
     private static class Destination implements Logging.Destination {
 
+        private static final String LOG_TAG = "nexec client service";
+
         public void verbose(String message) {
             Log.v(LOG_TAG, message);
         }
@@ -285,9 +287,7 @@ public class MainService extends Service {
                     }
 
                     String fmt = "connecting with X: domain=%d, type=%d, protocol=%d, sockaddr=%s";
-                    String log = String.format(fmt, domain, type, protocol,
-                                               sockaddr);
-                    Log.d(LOG_TAG, log);
+                    mLogger.debug(fmt, domain, type, protocol, sockaddr);
 
                     AlarmPipe serverToClientPipe;
                     StreamPipe clientToServerPipe;
@@ -357,7 +357,7 @@ public class MainService extends Service {
             @Override
             protected void onPostExecute(Void result) {
                 super.onPostExecute(result);
-                Log.i(LOG_TAG, "The task finished.");
+                mLogger.info("The task finished.");
             }
 
             protected Void doInBackground(Void... params) {
@@ -365,15 +365,15 @@ public class MainService extends Service {
                     run();
                 }
                 catch (IOException e) {
-                    Log.e(LOG_TAG, e.getMessage());
+                    mLogger.err(e.getMessage());
                     e.printStackTrace();
                 }
                 catch (GeneralSecurityException e) {
-                    Log.e(LOG_TAG, e.getMessage());
+                    mLogger.err(e.getMessage());
                     e.printStackTrace();
                 }
                 catch (InvalidPathException e) {
-                    Log.e(LOG_TAG, e.getMessage());
+                    mLogger.err(e.getMessage());
                     e.printStackTrace();
                 }
                 return null;
@@ -499,7 +499,7 @@ public class MainService extends Service {
                 String fmt = "nexec service: %s: %s: %s";
                 String name = e.getClass().getName();
                 String s = String.format(fmt, msg, name, e.getMessage());
-                Log.e(LOG_TAG, s);
+                mLogger.err("%s", s);
                 e.printStackTrace();
 
                 handleError(msg, s);
@@ -590,14 +590,14 @@ public class MainService extends Service {
 
         @Override
         public void execute(SessionId sessionId, INexecCallback callback) throws RemoteException {
-            Log.i(LOG_TAG, String.format("execute: sessionId=%s", sessionId));
+            mLogger.info("execute: sessionId=%s", sessionId);
             startTask(sessionId, callback);
         }
 
         @Override
         public void connect(SessionId sessionId, INexecCallback callback)
                 throws RemoteException {
-            Log.i(LOG_TAG, String.format("connect: sessionId=%s", sessionId));
+            mLogger.info("connect: sessionId=%s", sessionId);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -608,8 +608,7 @@ public class MainService extends Service {
 
         @Override
         public void disconnect(SessionId sessionId) throws RemoteException {
-            Log.i(LOG_TAG,
-                  String.format("disconnect: sessionId=%s", sessionId));
+            mLogger.info("disconnect: sessionId=%s", sessionId);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -620,7 +619,7 @@ public class MainService extends Service {
 
         @Override
         public void quit(SessionId sessionId) throws RemoteException {
-            Log.i(LOG_TAG, String.format("quit: sessionId=%s", sessionId));
+            mLogger.info("quit: sessionId=%s", sessionId);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -636,7 +635,7 @@ public class MainService extends Service {
 
         @Override
         public Bitmap xDraw(SessionId sessionId) throws RemoteException {
-            Log.i(LOG_TAG, String.format("xDraw: sessionId=%s", sessionId));
+            mLogger.info("xDraw: sessionId=%s", sessionId);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return createBlankBitmap();
@@ -651,8 +650,7 @@ public class MainService extends Service {
 
         @Override
         public void xLeftButtonPress(SessionId sessionId) throws RemoteException {
-            String fmt = "xLeftButtonPress: sessionId=%s";
-            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            mLogger.info("xLeftButtonPress: sessionId=%s", sessionId);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -662,8 +660,7 @@ public class MainService extends Service {
 
         @Override
         public void xLeftButtonRelease(SessionId sessionId) throws RemoteException {
-            String fmt = "xLeftButtonRelease: sessionId=%s";
-            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            mLogger.info("xLeftButtonRelease: sessionId=%s", sessionId);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -673,8 +670,8 @@ public class MainService extends Service {
 
         @Override
         public void xMotionNotify(SessionId sessionId, int x, int y) throws RemoteException {
-            String fmt = "xMotionNotify: sessionId=%s, x=%d, y=%d";
-            Log.i(LOG_TAG, String.format(fmt, sessionId.toString(), x, y));
+            mLogger.info("xMotionNotify: sessionId=%s, x=%d, y=%d",
+                         sessionId, x, y);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -685,8 +682,7 @@ public class MainService extends Service {
 
         @Override
         public void xRightButtonPress(SessionId sessionId) throws RemoteException {
-            String fmt = "xRightButtonPress: sessionId=%s";
-            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            mLogger.info("xRightButtonPress: sessionId=%s", sessionId);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -696,8 +692,7 @@ public class MainService extends Service {
 
         @Override
         public void xRightButtonRelease(SessionId sessionId) throws RemoteException {
-            String fmt = "xRightButtonRelease: sessionId=%s";
-            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            mLogger.info("xRightButtonRelease: sessionId=%s", sessionId);
             Session session = mSessions.get(sessionId);
             if (session == null) {
                 return;
@@ -831,12 +826,12 @@ public class MainService extends Service {
             catch (IOException e) {
                 // The sessionId must be invalid. Ignore it.
                 String fmt = "failed to read session parameter (invalid id?): %s: %s";
-                Log.w(LOG_TAG, String.format(fmt, sessionId, e.getMessage()));
+                mLogger.warn(fmt, sessionId, e.getMessage());
                 e.printStackTrace();
                 return;
             }
             catch (InvalidPathException e) {
-                Log.e(LOG_TAG, e.getMessage());
+                mLogger.err(e.getMessage());
                 e.printStackTrace();
                 return;
             }
@@ -849,8 +844,7 @@ public class MainService extends Service {
             task.setCallback(callback);
             task.execute();
             session.setTask(task);
-            String fmt = "A new task started for session %s.";
-            Log.i(LOG_TAG, String.format(fmt, sessionId.toString()));
+            mLogger.info("A new task started for session %s.", sessionId);
 
             mSessions.put(sessionId, session);
         }
@@ -866,14 +860,13 @@ public class MainService extends Service {
         }
     }
 
-    private static final String LOG_TAG = "nexec client service";
+    private static Logging.Logger mLogger;
 
     private Handler mHandler = new Handler();
 
     public void onCreate() {
         super.onCreate();
-        Logging.setDestination(new Destination());
-        Log.i(LOG_TAG, "MainService was created.");
+        mLogger.info("MainService was created.");
     }
 
     @Override
@@ -883,6 +876,11 @@ public class MainService extends Service {
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+    }
+
+    static {
+        Logging.setDestination(new Destination());
+        mLogger = new Logging.Logger("MainService");
     }
 }
 
