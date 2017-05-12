@@ -28,6 +28,7 @@ import android.view.WindowManager;
 
 import au.com.darkside.XServer.Xext.Extensions;
 import au.com.darkside.XServer.Xext.XShape;
+import jp.gr.java_conf.neko_daisuki.fsyscall.Logging;
 
 /**
  * @author Matthew Kwan
@@ -35,6 +36,9 @@ import au.com.darkside.XServer.Xext.XShape;
  * This class implements an X Windows server.
  */
 public class XServer {
+
+	private static Logging.Logger mLogger = new Logging.Logger("X Server");
+
 	public final short		ProtocolMajorVersion = 11;
 	public final short		ProtocolMinorVersion = 0;
 	public final String		vendor = "Open source";
@@ -144,6 +148,10 @@ public class XServer {
 	               XScreenListener screenListener) {
 	    this(c, 6000, null, width, height, screenListener);
 	}
+
+	public static Logging.Logger getLogger() {
+		return mLogger;
+    }
 
 	/**
 	 * Start the thread that listens on the socket.
