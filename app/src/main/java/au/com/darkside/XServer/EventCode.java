@@ -3,6 +3,8 @@
  */
 package au.com.darkside.XServer;
 
+import android.util.SparseArray;
+
 import java.io.IOException;
 
 /**
@@ -76,6 +78,8 @@ public class EventCode {
 		| MaskButton1Motion | MaskButton2Motion | MaskButton3Motion
 		| MaskButton4Motion | MaskButton5Motion | MaskButtonMotion;
 
+	private static final SparseArray<String> mCodes = new SparseArray<String>();
+
 	/**
 	 * Write an event header.
 	 * 
@@ -127,6 +131,8 @@ public class EventCode {
 		int				eventY,
 		int				state
 	) throws IOException {
+		logKeyEvent(KeyPress, keycode, root, eventWindow, child, rootX, rootY,
+					eventX, eventY, state);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -176,6 +182,8 @@ public class EventCode {
 		int				eventY,
 		int				state
 	) throws IOException {
+		logKeyEvent(KeyRelease, keycode, root, eventWindow, child, rootX, rootY,
+					eventX, eventY, state);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -225,6 +233,8 @@ public class EventCode {
 		int				eventY,
 		int				state
 	) throws IOException {
+		logButtonEvent(ButtonPress, button, root, eventWindow, child, rootX,
+					   rootY, eventX, eventY, state);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -274,6 +284,8 @@ public class EventCode {
 		int				eventY,
 		int				state
 	) throws IOException {
+		logButtonEvent(ButtonRelease, button, root, eventWindow, child, rootX,
+					   rootY, eventX, eventY, state);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -323,6 +335,8 @@ public class EventCode {
 		int				eventY,
 		int				state
 	) throws IOException {
+		logMotionEvent(MotionNotify, detail, root, eventWindow, child, rootX,
+					   rootY, eventX, eventY, state);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -376,6 +390,8 @@ public class EventCode {
 		int				mode,
 		boolean			focus
 	) throws IOException {
+		logMotionEvent(EnterNotify, detail, root, eventWindow, child, rootX,
+					   rootY, eventX, eventY, state);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -430,6 +446,8 @@ public class EventCode {
 		int				mode,
 		boolean			focus
 	) throws IOException {
+		logMotionEvent(LeaveNotify, detail, root, eventWindow, child, rootX,
+					   rootY, eventX, eventY, state);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -468,6 +486,7 @@ public class EventCode {
 		Window			eventWindow,
 		int				mode
 	) throws IOException {
+        logFocusEvent(FocusIn, detail, eventWindow, mode);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -498,6 +517,7 @@ public class EventCode {
 		Window			eventWindow,
 		int				mode
 	) throws IOException {
+		logFocusEvent(FocusOut, detail, eventWindow, mode);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -521,6 +541,7 @@ public class EventCode {
 		Client			client,
 		byte[]			keys
 	) throws IOException {
+		logKeymapNotify(keys);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -552,6 +573,7 @@ public class EventCode {
 		int				height,
 		int				count
 	) throws IOException {
+		log(Expose);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -592,6 +614,7 @@ public class EventCode {
 		int				height,
 		int				count
 	) throws IOException {
+		log(GraphicsExposure);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -624,6 +647,7 @@ public class EventCode {
 		Resource		drawable,
 		byte			majorOpcode
 	) throws IOException {
+		log(NoExposure);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -650,6 +674,7 @@ public class EventCode {
 		Window			window,
 		int				state
 	) throws IOException {
+		log(VisibilityNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -687,6 +712,7 @@ public class EventCode {
 		int				borderWidth,
 		boolean			overrideRedirect
 	) throws IOException {
+		log(CreateNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -718,6 +744,7 @@ public class EventCode {
 		Window			eventWindow,
 		Window			window
 	) throws IOException {
+		log(DestroyNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -745,6 +772,7 @@ public class EventCode {
 		Window			window,
 		boolean			fromConfigure
 	) throws IOException {
+		log(UnmapNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -773,6 +801,7 @@ public class EventCode {
 		Window			window,
 		boolean			overrideRedirect
 	) throws IOException {
+		log(MapNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -799,6 +828,7 @@ public class EventCode {
 		Window			eventWindow,
 		Window			window
 	) throws IOException {
+		log(MapRequest);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -832,6 +862,7 @@ public class EventCode {
 		int				y,
 		boolean			overrideRedirect
 	) throws IOException {
+		log(ReparentNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -875,6 +906,7 @@ public class EventCode {
 		int				borderWidth,
 		boolean			overrideRedirect
 	) throws IOException {
+		log(ConfigureNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -923,6 +955,7 @@ public class EventCode {
 		int				borderWidth,
 		int				valueMask
 	) throws IOException {
+		log(ConfigureRequest);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -959,6 +992,7 @@ public class EventCode {
 		int				x,
 		int				y
 	) throws IOException {
+		log(GravityNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -988,6 +1022,7 @@ public class EventCode {
 		int				width,
 		int				height
 	) throws IOException {
+		log(ResizeRequest);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1016,6 +1051,7 @@ public class EventCode {
 		Window			window,
 		int				place
 	) throws IOException {
+		log(CirculateNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1045,6 +1081,7 @@ public class EventCode {
 		Window			window,
 		int				place
 	) throws IOException {
+		log(CirculateRequest);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1076,6 +1113,7 @@ public class EventCode {
 		int				timestamp,
 		int				state
 	) throws IOException {
+		log(PropertyNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1105,6 +1143,7 @@ public class EventCode {
 		Window			window,
 		Atom			atom
 	) throws IOException {
+		log(SelectionClear);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1139,6 +1178,7 @@ public class EventCode {
 		Atom			target,
 		Atom			property
 	) throws IOException {
+		log(SelectionRequest);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1174,6 +1214,7 @@ public class EventCode {
 		Atom			target,
 		Atom			property
 	) throws IOException {
+		log(SelectionNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1206,6 +1247,7 @@ public class EventCode {
 		boolean			isNew,
 		int				state
 	) throws IOException {
+		log(ColormapNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1235,6 +1277,7 @@ public class EventCode {
 		int				firstKeycode,
 		int				count
 	) throws IOException {
+		log(MappingNotify);
 		InputOutput		io = client.getInputOutput ();
 
 		synchronized (io) {
@@ -1245,5 +1288,114 @@ public class EventCode {
 			io.writePadBytes (25);	// Unused.
 		}
 		io.flush ();
+	}
+
+	private static void log(int code, String info) {
+		XServer.getLogger().info("event: code=%d (%s), %s",
+								 code, mCodes.get(code), info);
+	}
+
+	private static void log(int code) {
+		XServer.getLogger().info("event: code=%d (%s)", code, mCodes.get(code));
+	}
+
+	private static void log(int code, String subcodeName, int subcode,
+							Window root, Window eventWindow, Window child,
+							int rootX, int rootY, int eventX, int eventY,
+							int state) {
+		log(code,
+			String.format("%s=%d, root=0x%x, eventWindow=0x%x, child=0x%x, rootX=%d, rootY=%d, eventX=%d, eventY=%d, state=%d",
+						  subcodeName, subcode, root.getId(),
+						  eventWindow.getId(),
+						  child != null ? child.getId() : 0, rootX, rootY,
+						  eventX, eventY, state));
+	}
+
+	private static void logButtonEvent(int code, int button, Window root,
+									   Window eventWindow, Window child,
+									   int rootX, int rootY, int eventX,
+									   int eventY, int state) {
+		log(code, "button", button, root, eventWindow, child, rootX, rootY,
+			eventX, eventY, state);
+	}
+
+	private static void logMotionEvent(int code, int detail, Window root,
+									   Window eventWindow, Window child,
+									   int rootX, int rootY, int eventX,
+									   int eventY, int state) {
+		log(code, "detail", detail, root, eventWindow, child, rootX, rootY,
+			eventX, eventY, state);
+	}
+
+	private static void logKeyEvent(int code, int keycode, Window root,
+									Window eventWindow, Window child, int rootX,
+									int rootY, int eventX, int eventY,
+									int state) {
+		log(code, "keycode", keycode, root, eventWindow, child, rootX, rootY,
+			eventX, eventY, state);
+	}
+
+	private static void logFocusEvent(int code, int detail, Window eventWindow,
+									  int mode) {
+        String[] details = new String[] { "Ancestor", "Virtual", "Inferior",
+										  "Nonlinear", "NonlinearVirtual",
+										  "Pointer", "PointerRoot", "None" };
+		String d = (0 <= detail) && (detail < details.length) ? details[detail]
+															  : "invalid";
+		String[] modes = new String[] { "Normal", "Grab", "Ungrab",
+										"WhileGrabbed" };
+		String m = (0 <= mode) && (mode < modes.length) ? modes[mode]
+														: "invalid";
+        log(code,
+			String.format("detail=%d (%s), eventWindow=0x%x, mode=%d (%s)",
+						  detail, d, eventWindow.getId(), mode, m));
+	}
+
+	private static void logKeymapNotify(byte[] keys) {
+        StringBuffer buffer = new StringBuffer();
+		String sep = "";
+        for (int i = 0; i < keys.length; i++) {
+			buffer.append(sep);
+            buffer.append(String.format("0x%x", keys[i]));
+			sep = " ";
+		}
+
+		log(KeymapNotify, buffer.toString());
+	}
+
+	static {
+		mCodes.put(KeyPress, "KeyPress");
+		mCodes.put(KeyRelease, "KeyRelease");
+		mCodes.put(ButtonPress, "ButtonPress");
+		mCodes.put(ButtonRelease, "ButtonRelease");
+		mCodes.put(MotionNotify, "MotionNotify");
+		mCodes.put(EnterNotify, "EnterNotify");
+		mCodes.put(LeaveNotify, "LeaveNotify");
+		mCodes.put(FocusIn, "FocusIn");
+		mCodes.put(FocusOut, "FocusOut");
+		mCodes.put(KeymapNotify, "KeymapNotify");
+		mCodes.put(Expose, "Expose");
+		mCodes.put(GraphicsExposure, "GraphicsExposure");
+		mCodes.put(NoExposure, "NoExposure");
+		mCodes.put(VisibilityNotify, "VisibilityNotify");
+		mCodes.put(CreateNotify, "CreateNotify");
+		mCodes.put(DestroyNotify, "DestroyNotify");
+		mCodes.put(UnmapNotify, "UnmapNotify");
+		mCodes.put(MapNotify, "MapNotify");
+		mCodes.put(MapRequest, "MapRequest");
+		mCodes.put(ReparentNotify, "ReparentNotify");
+		mCodes.put(ConfigureNotify, "ConfigureNotify");
+		mCodes.put(ConfigureRequest, "ConfigureRequest");
+		mCodes.put(GravityNotify, "GravityNotify");
+		mCodes.put(ResizeRequest, "ResizeRequest");
+		mCodes.put(CirculateNotify, "CirculateNotify");
+		mCodes.put(CirculateRequest, "CirculateRequest");
+		mCodes.put(PropertyNotify, "PropertyNotify");
+		mCodes.put(SelectionClear, "SelectionClear");
+		mCodes.put(SelectionRequest, "SelectionRequest");
+		mCodes.put(SelectionNotify, "SelectionNotify");
+		mCodes.put(ColormapNotify, "ColormapNotify");
+		mCodes.put(ClientMessage, "ClientMessage");
+		mCodes.put(MappingNotify, "MappingNotify");
 	}
 }
