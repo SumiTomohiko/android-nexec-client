@@ -598,7 +598,7 @@ public class MainService extends Service {
         public void connect(SessionId sessionId, INexecCallback callback)
                 throws RemoteException {
             mLogger.info("connect: sessionId=%s", sessionId);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return;
             }
@@ -609,7 +609,7 @@ public class MainService extends Service {
         @Override
         public void disconnect(SessionId sessionId) throws RemoteException {
             mLogger.info("disconnect: sessionId=%s", sessionId);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return;
             }
@@ -620,7 +620,7 @@ public class MainService extends Service {
         @Override
         public void quit(SessionId sessionId) throws RemoteException {
             mLogger.info("quit: sessionId=%s", sessionId);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return;
             }
@@ -636,7 +636,7 @@ public class MainService extends Service {
         @Override
         public Bitmap xDraw(SessionId sessionId) throws RemoteException {
             mLogger.info("xDraw: sessionId=%s", sessionId);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return createBlankBitmap();
             }
@@ -651,7 +651,7 @@ public class MainService extends Service {
         @Override
         public void xLeftButtonPress(SessionId sessionId) throws RemoteException {
             mLogger.info("xLeftButtonPress: sessionId=%s", sessionId);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return;
             }
@@ -661,7 +661,7 @@ public class MainService extends Service {
         @Override
         public void xLeftButtonRelease(SessionId sessionId) throws RemoteException {
             mLogger.info("xLeftButtonRelease: sessionId=%s", sessionId);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return;
             }
@@ -672,7 +672,7 @@ public class MainService extends Service {
         public void xMotionNotify(SessionId sessionId, int x, int y) throws RemoteException {
             mLogger.info("xMotionNotify: sessionId=%s, x=%d, y=%d",
                          sessionId, x, y);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return;
             }
@@ -683,7 +683,7 @@ public class MainService extends Service {
         @Override
         public void xRightButtonPress(SessionId sessionId) throws RemoteException {
             mLogger.info("xRightButtonPress: sessionId=%s", sessionId);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return;
             }
@@ -693,11 +693,19 @@ public class MainService extends Service {
         @Override
         public void xRightButtonRelease(SessionId sessionId) throws RemoteException {
             mLogger.info("xRightButtonRelease: sessionId=%s", sessionId);
-            Session session = mSessions.get(sessionId);
+            Session session = getSession(sessionId);
             if (session == null) {
                 return;
             }
             session.getXServer().getScreen().releaseRightButton();
+        }
+
+        private Session getSession(SessionId id) {
+            Session session = mSessions.get(id);
+            if (session == null) {
+                mLogger.err("unknown session id given: %s", id);
+            }
+            return session;
         }
 
         private Bitmap createBlankBitmap() {
