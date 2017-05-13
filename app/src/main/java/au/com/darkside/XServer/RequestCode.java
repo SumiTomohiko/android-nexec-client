@@ -13,6 +13,37 @@ import au.com.darkside.XServer.Xext.Extensions;
  * All the X request codes.
  */
 public class RequestCode {
+
+	public static class AllowEventsMode {
+
+		public static final int AsyncPointer = 0;
+		public static final int SyncPointer = 1;
+		public static final int ReplayPointer = 2;
+		public static final int AsyncKeyboard = 3;
+		public static final int SyncKeyboard = 4;
+		public static final int ReplayKeyboard = 5;
+		public static final int AsyncBoth = 6;
+		public static final int SyncBoth = 7;
+
+		private static SparseArray<String> mNames = new SparseArray<String>();
+
+		public static String toString(int mode) {
+			String name = mNames.get(mode);
+			return name != null ? name : "unknown mode";
+		}
+
+		private static void initialize() {
+			mNames.put(AsyncPointer, "AsyncPointer");
+			mNames.put(SyncPointer, "SyncPointer");
+			mNames.put(ReplayPointer, "ReplayPointer");
+			mNames.put(AsyncKeyboard, "AsyncKeyboard");
+			mNames.put(SyncKeyboard, "SyncKeyboard");
+			mNames.put(ReplayKeyboard, "ReplayKeyboard");
+			mNames.put(AsyncBoth, "AsyncBoth");
+			mNames.put(SyncBoth, "SyncBoth");
+		}
+	}
+
 	public static final byte	CreateWindow = 1;
 	public static final byte	ChangeWindowAttributes = 2;
 	public static final byte	GetWindowAttributes = 3;
@@ -269,5 +300,9 @@ public class RequestCode {
 		mCodes.put(Extensions.XGE, "Extensions.XGE");
 		mCodes.put(Extensions.BigRequests, "Extensions.BigRequests");
 		mCodes.put(Extensions.Shape, "Extensions.Shape");
+	}
+
+	static {
+		AllowEventsMode.initialize();
 	}
 }
